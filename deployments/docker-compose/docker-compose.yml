@@ -1,0 +1,32 @@
+version: '2'
+
+services:
+  dataexploder:
+    build: ../../collector/dataexploder
+    network_mode: host
+    depends_on:
+        - "influxdb"
+        - "collector"
+    volumes:
+        - /var/lib/dataexploder
+  collector:
+    build: ../../collector
+    network_mode: host
+    depends_on:
+      - "influxdb"
+    volumes:
+      - /var/lib/collector
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+      - "25826:25826/udp"
+    volumes:
+      - /var/lib/influxdb
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/lib/grafana
