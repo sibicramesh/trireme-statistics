@@ -53,21 +53,7 @@ func explode() {
 		flowModel.FlowRecord.DropReason = "None"
 		flowModel.FlowRecord.PolicyID = "sampleID"
 
-		httpCli.AddToDB(counter, map[string]interface{}{
-			"ContextID":       flowModel.FlowRecord.ContextID,
-			"Counter":         flowModel.FlowRecord.Count,
-			"SourceID":        flowModel.FlowRecord.Source.ID,
-			"SourceIP":        flowModel.FlowRecord.Source.IP,
-			"SourcePort":      flowModel.FlowRecord.Source.Port,
-			"SourceType":      flowModel.FlowRecord.Source.Type,
-			"DestinationID":   flowModel.FlowRecord.Destination.ID,
-			"DestinationIP":   flowModel.FlowRecord.Destination.IP,
-			"DestinationPort": flowModel.FlowRecord.Destination.Port,
-			"DestinationType": flowModel.FlowRecord.Destination.Type,
-			"Action":          flowModel.FlowRecord.Action,
-			"DropReason":      flowModel.FlowRecord.DropReason,
-			"PolicyID":        flowModel.FlowRecord.PolicyID,
-		})
+		httpCli.(*influxdb.Influxdbs).CollectFlowEvent(&flowModel.FlowRecord)
 
 		counter++
 

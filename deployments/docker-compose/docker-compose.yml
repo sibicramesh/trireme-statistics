@@ -3,7 +3,6 @@ version: '2'
 services:
   dataexploder:
     build: ../../collector/dataexploder
-    network_mode: host
     depends_on:
         - "influxdb"
         - "collector"
@@ -11,7 +10,6 @@ services:
         - /var/lib/dataexploder
   collector:
     build: ../../collector
-    network_mode: host
     depends_on:
       - "influxdb"
     volumes:
@@ -26,6 +24,8 @@ services:
       - /var/lib/influxdb
   grafana:
     image: grafana/grafana:latest
+    depends_on:
+      - "influxdb"
     ports:
       - "3000:3000"
     volumes:

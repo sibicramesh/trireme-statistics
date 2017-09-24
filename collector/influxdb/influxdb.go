@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	tcollector "github.com/aporeto-inc/trireme/collector"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -33,7 +34,7 @@ func NewDB() (Influxdb, error) {
 
 func CreateHTTPClient() (client.Client, error) {
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://0.0.0.0:8086",
+		Addr:     "http://influxdb:8086",
 		Username: username,
 		Password: password,
 	})
@@ -120,4 +121,31 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, value int, fields map[string]
 	bp.AddPoint(pt)
 	d.doneAdding <- true
 
+}
+
+func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
+	d.AddToDB(record.Count, map[string]interface{}{
+		"ContextID":       record.ContextID,
+		"Counter":         record.Count,
+		"SourceID":        record.Source.ID,
+		"SourceIP":        record.Source.IP,
+		"SourcePort":      record.Source.Port,
+		"SourceType":      record.Source.Type,
+		"DestinationID":   record.Destination.ID,
+		"DestinationIP":   record.Destination.IP,
+		"DestinationPort": record.Destination.Port,
+		"DestinationType": record.Destination.Type,
+		"Action":          record.Action,
+		"DropReason":      record.DropReason,
+		"PolicyID":        record.PolicyID,
+	})
+}
+
+func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
+	d.AddToDB(1, map[string]interface{}{
+		"ContextID": record.ContextID,
+		"IPAddress": record.IPAddress,
+		"Tags":      record.Tags,
+		"Event":     record.Event,
+	})
 }
