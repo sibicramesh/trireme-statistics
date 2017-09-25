@@ -3,6 +3,7 @@ version: '2'
 services:
   dataexploder:
     build: ../../collector/dataexploder
+    network_mode: "host"
     depends_on:
         - "influxdb"
         - "collector"
