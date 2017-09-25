@@ -16,7 +16,7 @@ const (
 	password = "aporeto"
 )
 
-func NewDB() (Influxdb, error) {
+func NewDB() (*Influxdbs, error) {
 
 	httpClient, err := CreateHTTPClient()
 	if err != nil {
@@ -34,7 +34,7 @@ func NewDB() (Influxdb, error) {
 
 func CreateHTTPClient() (client.Client, error) {
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://influxdb:8086",
+		Addr:     "http://0.0.0.0:8086",
 		Username: username,
 		Password: password,
 	})

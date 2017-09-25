@@ -10,6 +10,7 @@ services:
         - /var/lib/dataexploder
   collector:
     build: ../../collector
+    network_mode: "host"
     depends_on:
       - "influxdb"
     volumes:

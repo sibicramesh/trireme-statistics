@@ -53,7 +53,7 @@ func explode() {
 		flowModel.FlowRecord.DropReason = "None"
 		flowModel.FlowRecord.PolicyID = "sampleID"
 
-		httpCli.(*influxdb.Influxdbs).CollectFlowEvent(&flowModel.FlowRecord)
+		httpCli.CollectFlowEvent(&flowModel.FlowRecord)
 
 		counter++
 
