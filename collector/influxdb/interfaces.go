@@ -15,7 +15,7 @@ type Influxdb interface {
 type Influxdbs struct {
 	httpClient  client.Client
 	batchPoint  client.BatchPoints
-	count       chan int
+	tags        chan string
 	reportFlows chan (map[string]interface{})
 	stop        chan bool
 	doneAdding  chan bool

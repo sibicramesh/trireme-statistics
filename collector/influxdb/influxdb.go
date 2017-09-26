@@ -28,7 +28,7 @@ func NewDB() (*Influxdbs, error) {
 		reportFlows: make(chan map[string]interface{}),
 		stop:        make(chan bool),
 		doneAdding:  make(chan bool),
-		count:       make(chan int),
+		tags:        make(chan string),
 	}, nil
 }
 
@@ -56,11 +56,11 @@ func (d *Influxdbs) CreateDB() error {
 	return nil
 }
 
-func (d *Influxdbs) AddToDB(value int, tags map[string]interface{}) error {
+func (d *Influxdbs) AddToDB(tags string, fields map[string]interface{}) error {
 
-	if tags != nil {
-		d.reportFlows <- tags
-		d.count <- value
+	if fields != nil {
+		d.reportFlows <- fields
+		d.tags <- tags
 		if <-d.doneAdding {
 			err := d.httpClient.Write(d.batchPoint)
 			if err != nil {
@@ -99,7 +99,7 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 		select {
 		case r := <-d.reportFlows:
 			go func(r map[string]interface{}) {
-				d.AddData(bp, <-d.count, r)
+				d.AddData(bp, <-d.tags, r)
 			}(r)
 		case <-d.stop:
 			return
@@ -108,9 +108,9 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 	}
 }
 
-func (d *Influxdbs) AddData(bp client.BatchPoints, value int, fields map[string]interface{}) {
+func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[string]interface{}) {
 
-	tag := map[string]string{"counter": "flowstats"}
+	tag := map[string]string{"tag": tags}
 
 	pt, err := client.NewPoint("flows", tag, fields, time.Now())
 	if err != nil {
@@ -124,7 +124,7 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, value int, fields map[string]
 }
 
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
-	d.AddToDB(record.Count, map[string]interface{}{
+	d.AddToDB("FlowEvents", map[string]interface{}{
 		"ContextID":       record.ContextID,
 		"Counter":         record.Count,
 		"SourceID":        record.Source.ID,
@@ -142,7 +142,7 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 }
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
-	d.AddToDB(1, map[string]interface{}{
+	d.AddToDB("ContainerEvents", map[string]interface{}{
 		"ContextID": record.ContextID,
 		"IPAddress": record.IPAddress,
 		"Tags":      record.Tags,

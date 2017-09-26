@@ -27,16 +27,7 @@ func main() {
 		fmt.Println(err)
 		zap.L().Fatal("Failed to create DB", zap.Error(err))
 	}
-
-	err = httlpcli.Start()
-	if err != nil {
-		fmt.Println(err)
-		zap.L().Fatal("Failed to create Batch point", zap.Error(err))
-	}
-
-	httlpcli.AddToDB(1, map[string]interface{}{
-		"Flow": "newFlow"})
-
+	zap.L().Info("Database created and ready to be used")
 	for {
 
 	}
