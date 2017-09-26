@@ -116,8 +116,7 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[strin
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(pt)
-	zap.L().Info("hi")
+	zap.L().Info(pt.String())
 	bp.AddPoint(pt)
 	d.doneAdding <- true
 
