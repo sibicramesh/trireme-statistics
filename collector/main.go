@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
 	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
 )
 
@@ -27,8 +29,26 @@ func main() {
 		fmt.Println(err)
 		zap.L().Fatal("Failed to create DB", zap.Error(err))
 	}
+	time.Sleep(time.Second * 10)
+	graphanasession, err := grafana.NewUI()
+	if err != nil {
+		zap.L().Fatal("Failed to connect", zap.Error(err))
+	}
+
+	err = graphanasession.CreateDataSource()
+	if err != nil {
+		fmt.Println(err)
+		zap.L().Fatal("Failed to create datasource", zap.Error(err))
+	}
+
+	graphanasession.CreateDashboard()
+	graphanasession.AddRows("events", "ContextID", "FlowEvents")
+	graphanasession.AddRows("events", "Tags", "ContainerEvents")
+
 	zap.L().Info("Database created and ready to be used")
+
 	for {
 
 	}
+
 }
