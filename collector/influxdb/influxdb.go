@@ -132,9 +132,8 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[strin
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	cid, _ := d.cache.Get("ContextID")
 
-	d.grafana.AddRows("events", "Action", "FlowEvents")
 	if record.ContextID == cid {
-
+		d.grafana.AddRows("events", "Action", "FlowEvents")
 		d.AddToDB("FlowEvents", map[string]interface{}{
 			"ContextID":       record.ContextID,
 			"Counter":         record.Count,

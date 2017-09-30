@@ -34,10 +34,10 @@ func LaunchGrafanaCharts() (Grafanaui, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = session.CreateDataSource()
-	if err != nil {
-		return nil, err
-	}
+	// err = session.CreateDataSource()
+	// if err != nil {
+	// 	return nil, err
+	// }
 	session.CreateDashboard()
 
 	return session, nil
