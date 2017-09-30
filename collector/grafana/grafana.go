@@ -46,8 +46,8 @@ func LaunchGrafanaCharts() (Grafanaui, error) {
 func (g *Grafanauis) CreateDataSource() error {
 	ds := grafanaclient.DataSource{Name: "Events",
 		Type:     "influxdb",
-		Access:   "proxy",
-		URL:      "http://influxdb:8086",
+		Access:   "direct",
+		URL:      "http://0.0.0.0:8086",
 		User:     "aporeto",
 		Password: "aporeto",
 		Database: "flowDB",
