@@ -38,7 +38,7 @@ func LaunchGrafanaCharts() (Grafanaui, error) {
 	// if err != nil {
 	// 	return nil, err
 	// }
-	session.CreateDashboard()
+	session.CreateDashboard("")
 
 	return session, nil
 }
@@ -82,10 +82,13 @@ func (g *Grafanauis) GetDashboard(name string) error {
 	return nil
 }
 
-func (g *Grafanauis) CreateDashboard() {
+func (g *Grafanauis) CreateDashboard(dbr string) {
 	dashboard := grafanaclient.Dashboard{Editable: true}
 	g.dashboard = &dashboard
-	dashboard.Title = "Statistics"
+	if dbr == "" {
+		dashboard.Title = "Dependency"
+	}
+	dashboard.Title = dbr
 }
 
 func (g *Grafanauis) AddRows(rowname string, fields string, events string) {

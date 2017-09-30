@@ -41,7 +41,7 @@ func main() {
 		zap.L().Fatal("Failed to create datasource", zap.Error(err))
 	}
 
-	graphanasession.CreateDashboard()
+	graphanasession.CreateDashboard("Statistics")
 	graphanasession.AddRows("events", "Action", "FlowEvents")
 	graphanasession.AddRows("events", "IPAddress", "ContainerEvents")
 
