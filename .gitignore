@@ -1,4 +1,4 @@
 collector/collector
-dataexploder/dataexploder
+collector/dataexploder/dataexploder
 glide.lock
 vendor
