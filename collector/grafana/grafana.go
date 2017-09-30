@@ -29,6 +29,20 @@ func CreateSession() (*grafanaclient.Session, error) {
 	return session, nil
 }
 
+func LaunchGrafanaCharts() (Grafanaui, error) {
+	session, err := NewUI()
+	if err != nil {
+		return nil, err
+	}
+	err = session.CreateDataSource()
+	if err != nil {
+		return nil, err
+	}
+	session.CreateDashboard()
+
+	return session, nil
+}
+
 func (g *Grafanauis) CreateDataSource() error {
 	ds := grafanaclient.DataSource{Name: "Events",
 		Type:     "influxdb",

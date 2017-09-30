@@ -16,6 +16,7 @@ var wg sync.WaitGroup
 func explode() {
 	defer wg.Done()
 	var flowModel models.FlowModel
+	var contModel models.ContainerModel
 	var source collector.EndPoint
 	var destination collector.EndPoint
 	samplesize := 1000
@@ -54,7 +55,9 @@ func explode() {
 		flowModel.FlowRecord.PolicyID = "sampleID"
 
 		httpCli.CollectFlowEvent(&flowModel.FlowRecord)
-
+		contModel.ContainerRecord.ContextID = "1ascasd7t"
+		contModel.ContainerRecord.Event = "Create"
+		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 
 		time.Sleep(time.Second * 2)
