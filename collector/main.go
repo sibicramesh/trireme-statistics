@@ -43,7 +43,7 @@ func main() {
 
 	graphanasession.CreateDashboard()
 	graphanasession.AddRows("events", "Action", "FlowEvents")
-	graphanasession.AddRows("events", "Tags", "ContainerEvents")
+	graphanasession.AddRows("events", "IPAddress", "ContainerEvents")
 
 	zap.L().Info("Database created and ready to be used")
 
