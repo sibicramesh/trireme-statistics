@@ -87,8 +87,9 @@ func (g *Grafanauis) CreateDashboard(dbr string) {
 	g.dashboard = &dashboard
 	if dbr == "" {
 		dashboard.Title = "Dependency"
+	} else {
+		dashboard.Title = dbr
 	}
-	dashboard.Title = dbr
 }
 
 func (g *Grafanauis) AddRows(rowname string, fields string, events string) {
