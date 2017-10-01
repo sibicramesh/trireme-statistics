@@ -155,14 +155,14 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 }
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
-	if record.Event == "create" {
-		d.cache.Add("ContextID", record.ContextID)
+	//if record.Event == "create" {
+	d.cache.Add("ContextID", record.ContextID)
 
-		d.AddToDB("ContainerEvents", map[string]interface{}{
-			"ContextID": record.ContextID,
-			"IPAddress": record.IPAddress,
-			"Tags":      record.Tags,
-			"Event":     record.Event,
-		})
-	}
+	d.AddToDB("ContainerEvents", map[string]interface{}{
+		"ContextID": record.ContextID,
+		"IPAddress": record.IPAddress,
+		"Tags":      record.Tags,
+		"Event":     record.Event,
+	})
+	//}
 }
