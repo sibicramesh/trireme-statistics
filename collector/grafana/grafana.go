@@ -115,6 +115,7 @@ func (g *Grafanauis) AddRows(panel PanelType, rowname string, fields string, eve
 	graphRow.Title = rowname
 	//graphRow.Collapse = true // it will be collapsed by default
 	g.row = graphRow
+
 	newpanel := g.AddCharts(panel, events, fields)
 
 	g.AddPanels(newpanel)
@@ -197,4 +198,19 @@ func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields st
 
 	return graphPanel
 
+}
+func (g *Grafanauis) CreateRows(rowname string) {
+	graphRow := grafanaclient.NewRow()
+	graphRow.Title = rowname
+	//graphRow.Collapse = true // it will be collapsed by default
+	g.row = graphRow
+}
+func (g *Grafanauis) CreateGraphs(panel PanelType, rowname string, fields string, events string) {
+	newpanel := g.AddCharts(panel, events, fields)
+
+	g.AddPanels(newpanel)
+
+	g.dashboard.AddRow(g.row)
+
+	g.UploadToDashboard()
 }

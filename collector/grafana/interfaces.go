@@ -12,5 +12,6 @@ type Grafanaui interface {
 	AddCharts(panel PanelType, title string, fields string) grafanaclient.Panel
 	AddRows(panel PanelType, rowname string, paneltitle string, events string)
 	GetDashboard(name string) error
+	CreateGraphs(panel PanelType, rowname string, fields string, events string)
 	UploadToDashboard()
 }
