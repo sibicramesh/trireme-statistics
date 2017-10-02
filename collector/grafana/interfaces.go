@@ -1,21 +1,15 @@
 package grafana
 
 import (
-	"github.com/adejoux/grafanaclient"
+	"github.com/sibicramesh/grafanaclient"
 )
 
 type Grafanaui interface {
 	CreateDataSource() error
 	ListDataSources() error
 	CreateDashboard(dbr string)
-	AddCharts(title string, fields string) grafanaclient.Panel
-	AddRows(rowname string, paneltitle string, events string)
+	AddCharts(panel PanelType, title string, fields string) grafanaclient.Panel
+	AddRows(panel PanelType, rowname string, paneltitle string, events string)
 	GetDashboard(name string) error
 	UploadToDashboard()
-}
-
-type Grafanauis struct {
-	session   *grafanaclient.Session
-	dashboard *grafanaclient.Dashboard
-	row       grafanaclient.Row
 }

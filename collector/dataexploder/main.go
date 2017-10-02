@@ -56,7 +56,7 @@ func explode() {
 
 		httpCli.CollectFlowEvent(&flowModel.FlowRecord)
 		contModel.ContainerRecord.ContextID = "1ascasd7t"
-		contModel.ContainerRecord.Event = "Create"
+		contModel.ContainerRecord.Event = "start"
 		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 

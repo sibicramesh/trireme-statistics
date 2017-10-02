@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/adejoux/grafanaclient"
+	"github.com/sibicramesh/grafanaclient"
 )
 
 const (
@@ -84,21 +84,21 @@ func (g *Grafanauis) GetDashboard(name string) error {
 
 func (g *Grafanauis) CreateDashboard(dbr string) {
 	dashboard := grafanaclient.Dashboard{Editable: true}
-	g.dashboard = &dashboard
 	if dbr == "" {
 		dashboard.Title = "Dependency"
 	} else {
 		dashboard.Title = dbr
 	}
+	g.dashboard = &dashboard
 }
 
-func (g *Grafanauis) AddRows(rowname string, fields string, events string) {
+func (g *Grafanauis) AddRows(panel PanelType, rowname string, fields string, events string) {
 
 	graphRow := grafanaclient.NewRow()
 	graphRow.Title = rowname
 	//graphRow.Collapse = true // it will be collapsed by default
 	g.row = graphRow
-	newpanel := g.AddCharts(events, fields)
+	newpanel := g.AddCharts(panel, events, fields)
 
 	g.AddPanels(newpanel)
 
@@ -120,16 +120,26 @@ func (g *Grafanauis) UploadToDashboard() {
 	g.session.UploadDashboard(*g.dashboard, true)
 }
 
-func (g *Grafanauis) AddCharts(paneltitle string, fields string) grafanaclient.Panel {
+func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields string) grafanaclient.Panel {
 
 	// NewPanel will create a graph panel by default
 	graphPanel := grafanaclient.NewPanel()
 
 	// set panel title
 	graphPanel.Title = paneltitle
-
+	if paneltype == "singlestat" {
+		graphPanel.Type = "singlestat"
+	} else if paneltype == "graph" {
+		graphPanel.Type = "graph"
+	} else if paneltype == "jdbranham-diagram-panel" {
+		graphPanel.Type = "jdbranham-diagram-panel"
+		legend := grafanaclient.NewLegend()
+		legend.Gradient = []string{""}
+		graphPanel.Legend = legend
+	}
 	// let's specify the datasource
 	graphPanel.DataSource = "Events"
+	graphPanel.ValueName = "total"
 
 	// change panel span from default 12 to 6
 	graphPanel.Span = 12
@@ -137,7 +147,6 @@ func (g *Grafanauis) AddCharts(paneltitle string, fields string) grafanaclient.P
 	// stack lines with a filling of 1
 	graphPanel.Stack = true
 	graphPanel.Fill = 1
-
 	// define a target
 	target := grafanaclient.NewTarget()
 

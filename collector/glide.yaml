@@ -1,6 +1,6 @@
 package: github.com/aporeto-inc/trireme-statistics/collector
 import:
-- package: github.com/adejoux/grafanaclient
+- package: github.com/sibicramesh/grafanaclient
 - package: github.com/aporeto-inc/trireme
   version: ~1.0.60
   subpackages:

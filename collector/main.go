@@ -42,10 +42,10 @@ func main() {
 	}
 
 	graphanasession.CreateDashboard("Statistics")
-	graphanasession.AddRows("events", "Action", "FlowEvents")
-	graphanasession.AddRows("events", "IPAddress", "ContainerEvents")
+	graphanasession.AddRows(grafana.SingleStat, "events", "Action", "FlowEvents")
+	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 
-	zap.L().Info("Database created and ready to be used")
+	zap.L().Info("Database created and ready to be consumed")
 
 	for {
 
