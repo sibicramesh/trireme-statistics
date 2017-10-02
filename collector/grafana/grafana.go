@@ -210,7 +210,7 @@ func (g *Grafanauis) CreateGraphs(panel PanelType, rowname string, fields string
 
 	g.AddPanels(newpanel)
 
-	g.dashboard.AddRow(g.row)
+	//g.dashboard.AddRow(g.row)
 
 	g.UploadToDashboard()
 }
