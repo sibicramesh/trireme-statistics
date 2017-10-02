@@ -15,4 +15,5 @@ type Influxdbs struct {
 	doneAdding  chan bool
 	cache       cache.Cache
 	grafana     grafana.Grafanaui
+	contextID   string
 }
