@@ -35,13 +35,13 @@ func main() {
 		zap.L().Fatal("Failed to connect", zap.Error(err))
 	}
 
-	err = graphanasession.CreateDataSource()
+	err = graphanasession.CreateDataSource("Events")
 	if err != nil {
 		fmt.Println(err)
 		zap.L().Fatal("Failed to create datasource", zap.Error(err))
 	}
 
-	graphanasession.CreateDashboard("Statistics")
+	graphanasession.CreateDashboard("StatisticBoard")
 	graphanasession.AddRows(grafana.SingleStat, "events", "Action", "FlowEvents")
 	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 

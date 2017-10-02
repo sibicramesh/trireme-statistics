@@ -15,9 +15,12 @@ const (
 
 func NewUI() (Grafanaui, error) {
 	session, err := CreateSession()
+	if err != nil {
+		return nil, err
+	}
 	return &Grafanauis{
 		session: session,
-	}, err
+	}, nil
 }
 
 func CreateSession() (*grafanaclient.Session, error) {
@@ -34,28 +37,34 @@ func LaunchGrafanaCharts() (Grafanaui, error) {
 	if err != nil {
 		return nil, err
 	}
-	// err = session.CreateDataSource()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	ds, _ := session.GetDatasource("Dependency")
+	if ds.Name != "Dependency" {
+		err = session.CreateDataSource("Dependency")
+		if err != nil {
+			return nil, err
+		}
+	}
 	session.CreateDashboard("")
 
 	return session, nil
 }
 
-func (g *Grafanauis) CreateDataSource() error {
-	ds := grafanaclient.DataSource{Name: "Events",
-		Type:     "influxdb",
-		Access:   "direct",
-		URL:      "http://0.0.0.0:8086",
-		User:     "aporeto",
-		Password: "aporeto",
-		Database: "flowDB",
-	}
+func (g *Grafanauis) CreateDataSource(name string) error {
+	dsn, _ := g.GetDatasource(name)
+	if dsn.Name != name {
+		ds := grafanaclient.DataSource{Name: name,
+			Type:     "influxdb",
+			Access:   "direct",
+			URL:      "http://0.0.0.0:8086",
+			User:     "aporeto",
+			Password: "aporeto",
+			Database: "flowDB",
+		}
 
-	err := g.session.CreateDataSource(ds)
-	if err != nil {
-		return err
+		err := g.session.CreateDataSource(ds)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -73,6 +82,14 @@ func (g *Grafanauis) ListDataSources() error {
 	return nil
 }
 
+func (g *Grafanauis) GetDatasource(name string) (*grafanaclient.DataSource, error) {
+	ds, err := g.session.GetDataSource(name)
+	if err != nil {
+		return nil, err
+	}
+	return &ds, nil
+}
+
 func (g *Grafanauis) GetDashboard(name string) error {
 	dr, err := g.session.GetDashboard(name)
 	if err != nil {
@@ -85,7 +102,7 @@ func (g *Grafanauis) GetDashboard(name string) error {
 func (g *Grafanauis) CreateDashboard(dbr string) {
 	dashboard := grafanaclient.Dashboard{Editable: true}
 	if dbr == "" {
-		dashboard.Title = "Dependency"
+		dashboard.Title = "DependencyBoard"
 	} else {
 		dashboard.Title = dbr
 	}
@@ -129,16 +146,19 @@ func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields st
 	graphPanel.Title = paneltitle
 	if paneltype == "singlestat" {
 		graphPanel.Type = "singlestat"
+		graphPanel.DataSource = "Events"
 	} else if paneltype == "graph" {
 		graphPanel.Type = "graph"
+		graphPanel.DataSource = "Dependency"
 	} else if paneltype == "jdbranham-diagram-panel" {
 		graphPanel.Type = "jdbranham-diagram-panel"
 		legend := grafanaclient.NewLegend()
 		legend.Gradient = []string{""}
 		graphPanel.Legend = legend
+		graphPanel.DataSource = "Dependency"
 	}
 	// let's specify the datasource
-	graphPanel.DataSource = "Events"
+
 	graphPanel.ValueName = "total"
 
 	// change panel span from default 12 to 6
