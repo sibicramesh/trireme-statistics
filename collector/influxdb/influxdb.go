@@ -134,7 +134,7 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 
 	if record.ContextID == cid {
 		d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB("FlowEvents", map[string]interface{}{
+		d.AddToDB(record.ContextID, map[string]interface{}{
 			"ContextID":       record.ContextID,
 			"Counter":         record.Count,
 			"SourceID":        record.Source.ID,
@@ -159,7 +159,7 @@ func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 		d.cache.Add(record.ContextID, record.ContextID)
 		d.contextID = record.ContextID
 		d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB("ContainerEvents", map[string]interface{}{
+		d.AddToDB(record.ContextID, map[string]interface{}{
 			"ContextID": record.ContextID,
 			"IPAddress": record.IPAddress,
 			"Tags":      record.Tags,
