@@ -156,7 +156,7 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 	if record.Event == "start" {
-		d.cache.Add(record.ContextID, record)
+		d.cache.Add(record.ContextID, record.ContextID)
 
 		d.AddToDB("ContainerEvents", map[string]interface{}{
 			"ContextID": record.ContextID,

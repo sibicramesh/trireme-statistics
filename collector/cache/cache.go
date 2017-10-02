@@ -34,5 +34,5 @@ func (c *Caches) Get(u interface{}) (i interface{}, err error) {
 		return "", fmt.Errorf("Item does not exist")
 	}
 
-	return c.data[u], nil
+	return c.data[u].value, nil
 }
