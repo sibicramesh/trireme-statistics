@@ -2,7 +2,6 @@ package influxdb
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"go.uber.org/zap"
@@ -130,7 +129,7 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[strin
 	d.doneAdding <- true
 }
 
-func (d *Influxdbs) CollectFlowEvent(w http.ResponseWriter, r *http.Request, record *tcollector.FlowRecord) {
+func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	cid, _ := d.cache.Get(record.ContextID)
 
 	if record.ContextID == cid {
