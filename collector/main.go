@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
 	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
+	"github.com/aporeto-inc/trireme-statistics/collector/graph/utils"
 	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
 )
 
@@ -47,8 +51,12 @@ func main() {
 
 	zap.L().Info("Database created and ready to be consumed")
 
-	for {
+	router := mux.NewRouter()
 
-	}
+	router.HandleFunc("/get", utils.GetData).Methods("GET")
+	router.HandleFunc("/put", utils.PostData).Methods("POST")
+	router.Handle("/graph", http.FileServer(http.Dir("./graph")))
+
+	log.Fatal(http.ListenAndServe(":8080", router))
 
 }

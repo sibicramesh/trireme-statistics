@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/aporeto-inc/trireme-statistics/collector/cache"
-	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
 	tcollector "github.com/aporeto-inc/trireme/collector"
 	"github.com/influxdata/influxdb/client/v2"
 )
@@ -84,10 +83,10 @@ func (d *Influxdbs) Start() error {
 		return err
 	}
 
-	d.grafana, err = grafana.LaunchGrafanaCharts()
-	if err != nil {
-		return err
-	}
+	// d.grafana, err = grafana.LaunchGrafanaCharts()
+	// if err != nil {
+	// 	return err
+	// }
 
 	d.batchPoint = bp
 	go d.listen(d.batchPoint)
@@ -130,37 +129,37 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[strin
 }
 
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
-	cid, _ := d.cache.Get(record.ContextID)
+	//	cid, _ := d.cache.Get(record.ContextID)
+	fmt.Println("THIS IS CALLED")
+	//if record.ContextID == cid {
+	//d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
 
-	if record.ContextID == cid {
-		d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
-
-		d.AddToDB(record.ContextID, map[string]interface{}{
-			"ContextID":       record.ContextID,
-			"Counter":         record.Count,
-			"SourceID":        record.Source.ID,
-			"SourceIP":        record.Source.IP,
-			"SourcePort":      record.Source.Port,
-			"SourceType":      record.Source.Type,
-			"DestinationID":   record.Destination.ID,
-			"DestinationIP":   record.Destination.IP,
-			"DestinationPort": record.Destination.Port,
-			"DestinationType": record.Destination.Type,
-			"Action":          record.Action,
-			"DropReason":      record.DropReason,
-			"PolicyID":        record.PolicyID,
-		})
-	} else {
-		fmt.Println("NO PU RUNNING BUT RECEIVED A FLOW")
-	}
+	d.AddToDB("FlowEvents", map[string]interface{}{
+		"ContextID":       record.ContextID,
+		"Counter":         record.Count,
+		"SourceID":        record.Source.ID,
+		"SourceIP":        record.Source.IP,
+		"SourcePort":      record.Source.Port,
+		"SourceType":      record.Source.Type,
+		"DestinationID":   record.Destination.ID,
+		"DestinationIP":   record.Destination.IP,
+		"DestinationPort": record.Destination.Port,
+		"DestinationType": record.Destination.Type,
+		"Action":          record.Action,
+		"DropReason":      record.DropReason,
+		"PolicyID":        record.PolicyID,
+	})
+	//} else {
+	//fmt.Println("NO PU RUNNING BUT RECEIVED A FLOW")
+	//}
 }
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 	if record.Event == "start" {
-		d.cache.Add(record.ContextID, record.ContextID)
-		d.contextID = record.ContextID
-		d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB(record.ContextID, map[string]interface{}{
+		//d.cache.Add(record.ContextID, record.ContextID)
+		//d.contextID = record.ContextID
+		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+		d.AddToDB("ContainerEvents", map[string]interface{}{
 			"ContextID": record.ContextID,
 			"IPAddress": record.IPAddress,
 			"Tags":      record.Tags,

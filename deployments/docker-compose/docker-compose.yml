@@ -1,15 +1,15 @@
 version: '2'
 
 services:
-  # dataexploder:
-  #   build: ../../collector/dataexploder
-  #   network_mode: "host"
-  #   depends_on:
-  #       - "influxdb"
-  #       - "grafana"
-  #       - "collector"
-  #   volumes:
-  #       - /var/lib/dataexploder
+  dataexploder:
+    build: ../../collector/dataexploder
+    network_mode: "host"
+    depends_on:
+        - "influxdb"
+        - "grafana"
+        - "collector"
+    volumes:
+        - /var/lib/dataexploder
   collector:
     build: ../../collector
     network_mode: "host"
@@ -28,8 +28,7 @@ services:
       - /var/lib/influxdb
   grafana:
     image: grafana/grafana:latest
-    environment:
-      - GF_INSTALL_PLUGINS=jdbranham-diagram-panel
+
     depends_on:
       - "influxdb"
     ports:

@@ -148,15 +148,15 @@ func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields st
 	if paneltype == "singlestat" {
 		graphPanel.Type = "singlestat"
 		graphPanel.DataSource = "Events"
-	} else if paneltype == "graph" {
-		graphPanel.Type = "graph"
-		graphPanel.DataSource = "Dependency"
-	} else if paneltype == "jdbranham-diagram-panel" {
-		graphPanel.Type = "jdbranham-diagram-panel"
-		legend := grafanaclient.NewLegend()
-		legend.Gradient = []string{""}
-		graphPanel.Legend = legend
-		graphPanel.DataSource = "Dependency"
+		// } else if paneltype == "graph" {
+		// 	graphPanel.Type = "graph"
+		// 	graphPanel.DataSource = "Dependency"
+		// } else if paneltype == "jdbranham-diagram-panel" {
+		// 	graphPanel.Type = "jdbranham-diagram-panel"
+		// 	legend := grafanaclient.NewLegend()
+		// 	legend.Gradient = []string{""}
+		// 	graphPanel.Legend = legend
+		// 	graphPanel.DataSource = "Dependency"
 	}
 	// let's specify the datasource
 
