@@ -81,8 +81,8 @@ func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{
 		d.reportFlows <- fields
 		d.tags <- tags
 		if <-d.doneAdding {
-
 			err := d.httpClient.Write(d.batchPoint)
+			d.batchPoint = nil
 			if err != nil {
 				return err
 			}
@@ -106,8 +106,7 @@ func (d *Influxdbs) Start() error {
 	// 	return err
 	// }
 
-	d.batchPoint = bp
-	go d.listen(d.batchPoint)
+	go d.listen(bp)
 
 	return nil
 }
@@ -150,6 +149,7 @@ func (d *Influxdbs) AddData(bp client.BatchPoints, tags map[string]string, field
 		zap.L().Info(pt.String())
 		bp.AddPoint(pt)
 	}
+	d.batchPoint = bp
 	d.doneAdding <- true
 }
 
