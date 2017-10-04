@@ -164,31 +164,31 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 }
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
-	if record.Event == "start" {
-		//d.cache.Add(record.ContextID, record.ContextID)
-		//d.contextID = record.ContextID
-		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB(map[string]string{
-			"EventName": "ContainerStartEvents",
-			"EventID":   record.ContextID,
-		}, map[string]interface{}{
-			"ContextID": record.ContextID,
-			"IPAddress": record.IPAddress,
-			"Tags":      record.Tags,
-			"Event":     record.Event,
-		})
-	} else if record.Event == "stop" {
-		//d.cache.Add(record.ContextID, record.ContextID)
-		//d.contextID = record.ContextID
-		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB(map[string]string{
-			"EventName": "ContainerStopEvents",
-			"EventID":   record.ContextID,
-		}, map[string]interface{}{
-			"ContextID": record.ContextID,
-			"IPAddress": record.IPAddress,
-			"Tags":      record.Tags,
-			"Event":     record.Event,
-		})
-	}
+	//if record.Event == "start" {
+	//d.cache.Add(record.ContextID, record.ContextID)
+	//d.contextID = record.ContextID
+	//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+	d.AddToDB(map[string]string{
+		"EventName": "ContainerStartEvents",
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
+		"ContextID": record.ContextID,
+		"IPAddress": record.IPAddress,
+		"Tags":      record.Tags,
+		"Event":     record.Event,
+	})
+	//} else if record.Event == "stop" {
+	//d.cache.Add(record.ContextID, record.ContextID)
+	//d.contextID = record.ContextID
+	//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+	// d.AddToDB(map[string]string{
+	// 	"EventName": "ContainerStopEvents",
+	// 	"EventID":   record.ContextID,
+	// }, map[string]interface{}{
+	// 	"ContextID": record.ContextID,
+	// 	"IPAddress": record.IPAddress,
+	// 	"Tags":      record.Tags,
+	// 	"Event":     record.Event,
+	// })
+	//}
 }
