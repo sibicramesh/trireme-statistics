@@ -177,8 +177,7 @@ func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 			"Tags":      record.Tags,
 			"Event":     record.Event,
 		})
-	}
-	if record.Event == "stop" {
+	} else if record.Event == "stop" {
 		//d.cache.Add(record.ContextID, record.ContextID)
 		//d.contextID = record.ContextID
 		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
