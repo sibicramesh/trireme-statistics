@@ -17,14 +17,14 @@ const (
 	password = "aporeto"
 )
 
-func NewDB() (*Influxdbs, error) {
+func NewDB() (Influxdbs, error) {
 
 	httpClient, err := CreateHTTPClient()
 	if err != nil {
-		return nil, err
+		return Influxdbs{}, err
 	}
 
-	return &Influxdbs{
+	return Influxdbs{
 		httpClient:  httpClient,
 		reportFlows: make(chan map[string]interface{}),
 		stop:        make(chan bool),
@@ -48,7 +48,7 @@ func CreateHTTPClient() (client.Client, error) {
 	return httpClient, nil
 }
 
-func CreateAndStartDB() *Influxdbs {
+func CreateAndStartDB() Influxdbs {
 	httlpcli, err := NewDB()
 	if err != nil {
 		zap.L().Fatal("Failed to connect", zap.Error(err))

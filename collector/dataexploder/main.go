@@ -21,9 +21,8 @@ func explode() {
 	var destination collector.EndPoint
 	samplesize := 3
 	counter := 0
-	httpCli, err := influxdb.NewDB()
-	httpCli.Start()
-	fmt.Println(err)
+	httpCli := influxdb.CreateAndStartDB()
+
 	for i := 0; i < samplesize; i++ {
 
 		flowModel.FlowRecord.ContextID = "1ascasd7t"
