@@ -82,7 +82,6 @@ func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{
 		d.tags <- tags
 		if <-d.doneAdding {
 			err := d.httpClient.Write(d.batchPoint)
-			d.batchPoint = nil
 			if err != nil {
 				return err
 			}
@@ -93,20 +92,12 @@ func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{
 
 func (d *Influxdbs) Start() error {
 
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  database,
-		Precision: "us",
-	})
-	if err != nil {
-		return err
-	}
-
 	// d.grafana, err = grafana.LaunchGrafanaCharts()
 	// if err != nil {
 	// 	return err
 	// }
 
-	go d.listen(bp)
+	go d.listen()
 
 	return nil
 }
@@ -117,13 +108,13 @@ func (d *Influxdbs) Stop() error {
 	return nil
 }
 
-func (d *Influxdbs) listen(bp client.BatchPoints) {
+func (d *Influxdbs) listen() {
 
 	for {
 		select {
 		case r := <-d.reportFlows:
 			go func(r map[string]interface{}) {
-				d.AddData(bp, <-d.tags, r)
+				d.AddData(<-d.tags, r)
 			}(r)
 		case <-d.stop:
 			return
@@ -132,8 +123,14 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 	}
 }
 
-func (d *Influxdbs) AddData(bp client.BatchPoints, tags map[string]string, fields map[string]interface{}) {
+func (d *Influxdbs) AddData(tags map[string]string, fields map[string]interface{}) {
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  database,
+		Precision: "us",
+	})
+	if err != nil {
 
+	}
 	if tags["EventName"] == "ContainerStartEvents" || tags["EventName"] == "ContainerStopEvents" {
 		pt, err := client.NewPoint("ContainerEvents", tags, fields, time.Now())
 		if err != nil {

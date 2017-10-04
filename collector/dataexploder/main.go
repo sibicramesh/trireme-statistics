@@ -19,7 +19,7 @@ func explode() {
 	var contModel models.ContainerModel
 	var source collector.EndPoint
 	var destination collector.EndPoint
-	samplesize := 3
+	samplesize := 5
 	counter := 0
 	httpCli := influxdb.CreateAndStartDB()
 
@@ -59,7 +59,7 @@ func explode() {
 		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 10)
 	}
 	wg.Wait()
 	httpCli.Stop()
