@@ -117,7 +117,7 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 
 func (d *Influxdbs) AddData(bp client.BatchPoints, tags map[string]string, fields map[string]interface{}) {
 
-	if tags["EventName"] == "ContainerEvents" {
+	if tags["EventName"] == "ContainerStartEvents" {
 		pt, err := client.NewPoint("ContainerEvents", tags, fields, time.Now())
 		if err != nil {
 			fmt.Println(err)
