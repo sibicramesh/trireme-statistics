@@ -169,7 +169,21 @@ func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 		//d.contextID = record.ContextID
 		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
 		d.AddToDB(map[string]string{
-			"EventName": "ContainerEvents",
+			"EventName": "ContainerStartEvents",
+			"EventID":   record.ContextID,
+		}, map[string]interface{}{
+			"ContextID": record.ContextID,
+			"IPAddress": record.IPAddress,
+			"Tags":      record.Tags,
+			"Event":     record.Event,
+		})
+	}
+	if record.Event == "stop" {
+		//d.cache.Add(record.ContextID, record.ContextID)
+		//d.contextID = record.ContextID
+		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+		d.AddToDB(map[string]string{
+			"EventName": "ContainerStopEvents",
 			"EventID":   record.ContextID,
 		}, map[string]interface{}{
 			"ContextID": record.ContextID,
