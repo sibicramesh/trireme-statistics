@@ -6,7 +6,7 @@ import (
 
 type Influxdb interface {
 	CreateDB() error
-	AddToDB(value int, tags map[string]interface{}) error
+	AddToDB(tags map[string]string, fields map[string]interface{}) error
 	AddData(bp client.BatchPoints, value int, tags map[string]interface{})
 	Start() error
 	Stop() error

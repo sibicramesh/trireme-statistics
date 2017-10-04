@@ -29,7 +29,7 @@ func NewDB() (*Influxdbs, error) {
 		reportFlows: make(chan map[string]interface{}),
 		stop:        make(chan bool),
 		doneAdding:  make(chan bool),
-		tags:        make(chan string),
+		tags:        make(chan map[string]string),
 		cache:       cache.NewCache(),
 	}, nil
 }
@@ -58,7 +58,7 @@ func (d *Influxdbs) CreateDB() error {
 	return nil
 }
 
-func (d *Influxdbs) AddToDB(tags string, fields map[string]interface{}) error {
+func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{}) error {
 
 	if fields != nil {
 		d.reportFlows <- fields
@@ -115,18 +115,17 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 	}
 }
 
-func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[string]interface{}) {
+func (d *Influxdbs) AddData(bp client.BatchPoints, tags map[string]string, fields map[string]interface{}) {
 
-	tag := map[string]string{"tag": tags}
-	if tags == "ContainerEvents" {
-		pt, err := client.NewPoint("ContainerEvents", tag, fields, time.Now())
+	if tags["EventName"] == "ContainerEvents" {
+		pt, err := client.NewPoint("ContainerEvents", tags, fields, time.Now())
 		if err != nil {
 			fmt.Println(err)
 		}
 		zap.L().Info(pt.String())
 		bp.AddPoint(pt)
-	} else if tags == "FlowEvents" {
-		pt, err := client.NewPoint("FlowEvents", tag, fields, time.Now())
+	} else if tags["EventName"] == "FlowEvents" {
+		pt, err := client.NewPoint("FlowEvents", tags, fields, time.Now())
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -141,7 +140,10 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	//if record.ContextID == cid {
 	//d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
 
-	d.AddToDB("FlowEvents", map[string]interface{}{
+	d.AddToDB(map[string]string{
+		"EventName": "FlowEvents",
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
 		"ContextID":       record.ContextID,
 		"Counter":         record.Count,
 		"SourceID":        record.Source.ID,
@@ -166,7 +168,10 @@ func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 		//d.cache.Add(record.ContextID, record.ContextID)
 		//d.contextID = record.ContextID
 		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
-		d.AddToDB("ContainerEvents", map[string]interface{}{
+		d.AddToDB(map[string]string{
+			"EventName": "ContainerEvents",
+			"EventID":   record.ContextID,
+		}, map[string]interface{}{
 			"ContextID": record.ContextID,
 			"IPAddress": record.IPAddress,
 			"Tags":      record.Tags,

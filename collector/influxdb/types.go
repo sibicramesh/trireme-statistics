@@ -9,7 +9,7 @@ import (
 type Influxdbs struct {
 	httpClient  client.Client
 	batchPoint  client.BatchPoints
-	tags        chan string
+	tags        chan (map[string]string)
 	reportFlows chan (map[string]interface{})
 	stop        chan bool
 	doneAdding  chan bool
