@@ -19,7 +19,7 @@ func explode() {
 	var contModel models.ContainerModel
 	var source collector.EndPoint
 	var destination collector.EndPoint
-	samplesize := 1000
+	samplesize := 3
 	counter := 0
 	httpCli, err := influxdb.NewDB()
 	httpCli.Start()

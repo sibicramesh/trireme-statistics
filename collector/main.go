@@ -10,7 +10,6 @@ import (
 
 	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
 	"github.com/aporeto-inc/trireme-statistics/collector/graph/utils"
-	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
 )
 
 func banner() {
@@ -22,16 +21,6 @@ Trireme-Stats
 func main() {
 	banner()
 
-	httlpcli, err := influxdb.NewDB()
-	if err != nil {
-		zap.L().Fatal("Failed to connect", zap.Error(err))
-	}
-
-	err = httlpcli.CreateDB()
-	if err != nil {
-		fmt.Println(err)
-		zap.L().Fatal("Failed to create DB", zap.Error(err))
-	}
 	time.Sleep(time.Second * 10)
 	graphanasession, err := grafana.NewUI()
 	if err != nil {

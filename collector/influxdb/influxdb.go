@@ -48,6 +48,23 @@ func CreateHTTPClient() (client.Client, error) {
 	return httpClient, nil
 }
 
+func CreateAndStartDB() *Influxdbs {
+	httlpcli, err := NewDB()
+	if err != nil {
+		zap.L().Fatal("Failed to connect", zap.Error(err))
+	}
+
+	err = httlpcli.CreateDB()
+	if err != nil {
+		fmt.Println(err)
+		zap.L().Fatal("Failed to create DB", zap.Error(err))
+	}
+
+	httlpcli.Start()
+
+	return httlpcli
+}
+
 func (d *Influxdbs) CreateDB() error {
 	q := client.NewQuery("CREATE DATABASE "+database, "", "")
 	if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
@@ -64,6 +81,7 @@ func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{
 		d.reportFlows <- fields
 		d.tags <- tags
 		if <-d.doneAdding {
+
 			err := d.httpClient.Write(d.batchPoint)
 			if err != nil {
 				return err
