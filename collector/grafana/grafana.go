@@ -172,7 +172,11 @@ func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields st
 	target := grafanaclient.NewTarget()
 
 	//specify the measurement to use
-	target.Measurement = "flows"
+	if paneltitle == "FlowEvents" {
+		target.Measurement = "FlowEvents"
+	} else if paneltitle == "ContainerEvents" {
+		target.Measurement = "ContainerEvents"
+	}
 	var selectd grafanaclient.Select
 	selectd.Type = "field"
 	selectd.Params = []string{fields}

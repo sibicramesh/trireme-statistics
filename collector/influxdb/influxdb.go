@@ -118,19 +118,26 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 func (d *Influxdbs) AddData(bp client.BatchPoints, tags string, fields map[string]interface{}) {
 
 	tag := map[string]string{"tag": tags}
-
-	pt, err := client.NewPoint("flows", tag, fields, time.Now())
-	if err != nil {
-		fmt.Println(err)
+	if tags == "ContainerEvents" {
+		pt, err := client.NewPoint("ContainerEvents", tag, fields, time.Now())
+		if err != nil {
+			fmt.Println(err)
+		}
+		zap.L().Info(pt.String())
+		bp.AddPoint(pt)
+	} else if tags == "FlowEvents" {
+		pt, err := client.NewPoint("FlowEvents", tag, fields, time.Now())
+		if err != nil {
+			fmt.Println(err)
+		}
+		zap.L().Info(pt.String())
+		bp.AddPoint(pt)
 	}
-	zap.L().Info(pt.String())
-	bp.AddPoint(pt)
 	d.doneAdding <- true
 }
 
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	//	cid, _ := d.cache.Get(record.ContextID)
-	fmt.Println("THIS IS CALLED")
 	//if record.ContextID == cid {
 	//d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
 

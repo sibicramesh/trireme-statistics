@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
 	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
@@ -51,12 +50,10 @@ func main() {
 
 	zap.L().Info("Database created and ready to be consumed")
 
-	router := mux.NewRouter()
+	http.HandleFunc("/get", utils.GetData)
 
-	router.HandleFunc("/get", utils.GetData).Methods("GET")
-	router.HandleFunc("/put", utils.PostData).Methods("POST")
-	router.Handle("/graph", http.FileServer(http.Dir("./graph")))
+	http.Handle("/graph", http.FileServer(http.Dir("./graph")))
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 
 }
