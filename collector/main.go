@@ -11,7 +11,7 @@ import (
 	"github.com/rs/cors"
 
 	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
-	"github.com/aporeto-inc/trireme-statistics/collector/graph/utils"
+	"github.com/aporeto-inc/trireme-statistics/collector/graph/server"
 )
 
 func banner() {
@@ -41,7 +41,7 @@ func main() {
 
 	zap.L().Info("Database created and ready to be consumed")
 	mux := http.NewServeMux()
-	mux.HandleFunc("/get", utils.GetData)
+	mux.HandleFunc("/get", server.GetData)
 	mux.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))
 
 	handler := cors.Default().Handler(mux)
