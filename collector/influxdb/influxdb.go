@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/aporeto-inc/trireme-statistics/collector/cache"
 	tcollector "github.com/aporeto-inc/trireme/collector"
 	"github.com/influxdata/influxdb/client/v2"
 )
@@ -30,7 +29,6 @@ func NewDB() (*Influxdbs, error) {
 		stop:        make(chan bool),
 		doneAdding:  make(chan bool),
 		tags:        make(chan map[string]string),
-		cache:       cache.NewCache(),
 	}, nil
 }
 
