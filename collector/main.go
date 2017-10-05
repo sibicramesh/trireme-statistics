@@ -41,7 +41,7 @@ func main() {
 
 	http.HandleFunc("/get", utils.GetData)
 
-	http.Handle("/graph", http.FileServer(http.Dir("./graph")))
+	http.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
