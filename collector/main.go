@@ -8,6 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/rs/cors"
+
 	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
 	"github.com/aporeto-inc/trireme-statistics/collector/graph/utils"
 )
@@ -38,11 +40,11 @@ func main() {
 	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 
 	zap.L().Info("Database created and ready to be consumed")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/get", utils.GetData)
+	mux.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))
 
-	http.HandleFunc("/get", utils.GetData)
-
-	http.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	handler := cors.Default().Handler(mux)
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", handler))
 
 }

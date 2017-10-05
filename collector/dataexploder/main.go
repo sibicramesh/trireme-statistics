@@ -59,7 +59,7 @@ func explode() {
 		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
 	}
 	wg.Wait()
 	httpCli.Stop()

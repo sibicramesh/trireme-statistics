@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	url      = "http://0.0.0.0:3000"
+	url      = "http://grafana:3000"
 	username = "admin"
 	password = "admin"
 )

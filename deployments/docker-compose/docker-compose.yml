@@ -3,7 +3,6 @@ version: '2'
 services:
   # dataexploder:
   #   build: ../../collector/dataexploder
-  #   network_mode: "host"
   #   depends_on:
   #       - "influxdb"
   #       - "grafana"
@@ -12,7 +11,8 @@ services:
   #       - /var/lib/dataexploder
   collector:
     build: ../../collector
-    network_mode: "host"
+    ports:
+        - "8080:8080"
     depends_on:
       - "influxdb"
       - "grafana"
