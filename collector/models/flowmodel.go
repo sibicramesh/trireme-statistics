@@ -6,3 +6,8 @@ type FlowModel struct {
 	Counter    int
 	FlowRecord collector.FlowRecord
 }
+
+type ContainerModel struct {
+	Counter         int
+	ContainerRecord collector.ContainerRecord
+}

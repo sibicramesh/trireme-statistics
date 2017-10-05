@@ -2,10 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
+	"github.com/rs/cors"
+
+	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
+	"github.com/aporeto-inc/trireme-statistics/collector/graph/server"
 )
 
 func banner() {
@@ -17,27 +23,28 @@ Trireme-Stats
 func main() {
 	banner()
 
-	httlpcli, err := influxdb.NewDB()
+	time.Sleep(time.Second * 10)
+	graphanasession, err := grafana.NewUI()
 	if err != nil {
 		zap.L().Fatal("Failed to connect", zap.Error(err))
 	}
 
-	err = httlpcli.CreateDB()
+	err = graphanasession.CreateDataSource("Events")
 	if err != nil {
 		fmt.Println(err)
-		zap.L().Fatal("Failed to create DB", zap.Error(err))
+		zap.L().Fatal("Failed to create datasource", zap.Error(err))
 	}
 
-	err = httlpcli.Start()
-	if err != nil {
-		fmt.Println(err)
-		zap.L().Fatal("Failed to create Batch point", zap.Error(err))
-	}
+	graphanasession.CreateDashboard("StatisticBoard")
+	graphanasession.AddRows(grafana.SingleStat, "events", "Action", "FlowEvents")
+	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 
-	httlpcli.AddToDB(1, map[string]interface{}{
-		"Flow": "newFlow"})
+	zap.L().Info("Database created and ready to be consumed")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/get", server.GetData)
+	mux.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))
 
-	for {
+	handler := cors.Default().Handler(mux)
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", handler))
 
-	}
 }

@@ -1,17 +1,21 @@
 version: '2'
 
 services:
-  dataexploder:
-    build: ../../collector/dataexploder
-    depends_on:
-        - "influxdb"
-        - "collector"
-    volumes:
-        - /var/lib/dataexploder
+  # dataexploder:
+  #   build: ../../collector/dataexploder
+  #   depends_on:
+  #       - "influxdb"
+  #       - "grafana"
+  #       - "collector"
+  #   volumes:
+  #       - /var/lib/dataexploder
   collector:
     build: ../../collector
+    ports:
+        - "8080:8080"
     depends_on:
       - "influxdb"
+      - "grafana"
     volumes:
       - /var/lib/collector
   influxdb:
@@ -24,6 +28,7 @@ services:
       - /var/lib/influxdb
   grafana:
     image: grafana/grafana:latest
+
     depends_on:
       - "influxdb"
     ports:

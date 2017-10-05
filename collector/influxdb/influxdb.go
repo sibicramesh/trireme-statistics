@@ -16,7 +16,7 @@ const (
 	password = "aporeto"
 )
 
-func NewDB() (Influxdb, error) {
+func NewDB() (*Influxdbs, error) {
 
 	httpClient, err := CreateHTTPClient()
 	if err != nil {
@@ -28,13 +28,13 @@ func NewDB() (Influxdb, error) {
 		reportFlows: make(chan map[string]interface{}),
 		stop:        make(chan bool),
 		doneAdding:  make(chan bool),
-		count:       make(chan int),
+		tags:        make(chan map[string]string),
 	}, nil
 }
 
 func CreateHTTPClient() (client.Client, error) {
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://influxdb:8086",
+		Addr:     "http://0.0.0.0:8086",
 		Username: username,
 		Password: password,
 	})
@@ -44,6 +44,23 @@ func CreateHTTPClient() (client.Client, error) {
 	}
 
 	return httpClient, nil
+}
+
+func CreateAndStartDB() *Influxdbs {
+	httlpcli, err := NewDB()
+	if err != nil {
+		zap.L().Fatal("Failed to connect", zap.Error(err))
+	}
+
+	err = httlpcli.CreateDB()
+	if err != nil {
+		fmt.Println(err)
+		zap.L().Fatal("Failed to create DB", zap.Error(err))
+	}
+
+	httlpcli.Start()
+
+	return httlpcli
 }
 
 func (d *Influxdbs) CreateDB() error {
@@ -56,11 +73,11 @@ func (d *Influxdbs) CreateDB() error {
 	return nil
 }
 
-func (d *Influxdbs) AddToDB(value int, tags map[string]interface{}) error {
+func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{}) error {
 
-	if tags != nil {
-		d.reportFlows <- tags
-		d.count <- value
+	if fields != nil {
+		d.reportFlows <- fields
+		d.tags <- tags
 		if <-d.doneAdding {
 			err := d.httpClient.Write(d.batchPoint)
 			if err != nil {
@@ -73,16 +90,12 @@ func (d *Influxdbs) AddToDB(value int, tags map[string]interface{}) error {
 
 func (d *Influxdbs) Start() error {
 
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  database,
-		Precision: "us",
-	})
-	if err != nil {
-		return err
-	}
+	// d.grafana, err = grafana.LaunchGrafanaCharts()
+	// if err != nil {
+	// 	return err
+	// }
 
-	d.batchPoint = bp
-	go d.listen(d.batchPoint)
+	go d.listen()
 
 	return nil
 }
@@ -93,13 +106,13 @@ func (d *Influxdbs) Stop() error {
 	return nil
 }
 
-func (d *Influxdbs) listen(bp client.BatchPoints) {
+func (d *Influxdbs) listen() {
 
 	for {
 		select {
 		case r := <-d.reportFlows:
 			go func(r map[string]interface{}) {
-				d.AddData(bp, <-d.count, r)
+				d.AddData(<-d.tags, r)
 			}(r)
 		case <-d.stop:
 			return
@@ -108,23 +121,42 @@ func (d *Influxdbs) listen(bp client.BatchPoints) {
 	}
 }
 
-func (d *Influxdbs) AddData(bp client.BatchPoints, value int, fields map[string]interface{}) {
-
-	tag := map[string]string{"counter": "flowstats"}
-
-	pt, err := client.NewPoint("flows", tag, fields, time.Now())
+func (d *Influxdbs) AddData(tags map[string]string, fields map[string]interface{}) {
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  database,
+		Precision: "us",
+	})
 	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(pt)
-	zap.L().Info("hi")
-	bp.AddPoint(pt)
-	d.doneAdding <- true
 
+	}
+	if tags["EventName"] == "ContainerStartEvents" || tags["EventName"] == "ContainerStopEvents" {
+		pt, err := client.NewPoint("ContainerEvents", tags, fields, time.Now())
+		if err != nil {
+			fmt.Println(err)
+		}
+		zap.L().Info(pt.String())
+		bp.AddPoint(pt)
+	} else if tags["EventName"] == "FlowEvents" {
+		pt, err := client.NewPoint("FlowEvents", tags, fields, time.Now())
+		if err != nil {
+			fmt.Println(err)
+		}
+		zap.L().Info(pt.String())
+		bp.AddPoint(pt)
+	}
+	d.batchPoint = bp
+	d.doneAdding <- true
 }
 
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
-	d.AddToDB(record.Count, map[string]interface{}{
+	//	cid, _ := d.cache.Get(record.ContextID)
+	//if record.ContextID == cid {
+	//d.grafana.CreateGraphs(grafana.Graph, "events", "Action", "FlowEvents")
+
+	d.AddToDB(map[string]string{
+		"EventName": "FlowEvents",
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
 		"ContextID":       record.ContextID,
 		"Counter":         record.Count,
 		"SourceID":        record.Source.ID,
@@ -139,13 +171,38 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 		"DropReason":      record.DropReason,
 		"PolicyID":        record.PolicyID,
 	})
+	//} else {
+	//fmt.Println("NO PU RUNNING BUT RECEIVED A FLOW")
+	//}
 }
 
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
-	d.AddToDB(1, map[string]interface{}{
-		"ContextID": record.ContextID,
-		"IPAddress": record.IPAddress,
-		"Tags":      record.Tags,
-		"Event":     record.Event,
-	})
+	if record.Event == "start" {
+		//d.cache.Add(record.ContextID, record.ContextID)
+		//d.contextID = record.ContextID
+		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+		d.AddToDB(map[string]string{
+			"EventName": "ContainerStartEvents",
+			"EventID":   record.ContextID,
+		}, map[string]interface{}{
+			"ContextID": record.ContextID,
+			"IPAddress": record.IPAddress,
+			"Tags":      record.Tags,
+			"Event":     record.Event,
+		})
+	}
+	if record.Event == "delete" {
+		//d.cache.Add(record.ContextID, record.ContextID)
+		//d.contextID = record.ContextID
+		//d.grafana.AddRows(grafana.Graph, "events", "Action", "FlowEvents")
+		d.AddToDB(map[string]string{
+			"EventName": "ContainerStopEvents",
+			"EventID":   record.ContextID,
+		}, map[string]interface{}{
+			"ContextID": record.ContextID,
+			"IPAddress": record.IPAddress,
+			"Tags":      record.Tags,
+			"Event":     record.Event,
+		})
+	}
 }
