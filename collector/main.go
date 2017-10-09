@@ -39,7 +39,7 @@ func main() {
 	graphanasession.AddRows(grafana.SingleStat, "events", "Action", "FlowEvents")
 	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 
-	zap.L().Info("Database created and ready to be consumed")
+	zap.L().Info("Trireme-Statistics Started...")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/get", server.GetData)
 	mux.Handle("/graph/", http.StripPrefix("/graph/", http.FileServer(http.Dir("graph"))))

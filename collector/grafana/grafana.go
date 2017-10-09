@@ -90,13 +90,12 @@ func (g *Grafanauis) GetDatasource(name string) (*grafanaclient.DataSource, erro
 	return &ds, nil
 }
 
-func (g *Grafanauis) GetDashboard(name string) error {
+func (g *Grafanauis) GetDashboard(name string) (grafanaclient.DashboardResult, error) {
 	dr, err := g.session.GetDashboard(name)
 	if err != nil {
-		return err
+		return grafanaclient.DashboardResult{}, err
 	}
-	fmt.Println(dr)
-	return nil
+	return dr, nil
 }
 
 func (g *Grafanauis) CreateDashboard(dbr string) {

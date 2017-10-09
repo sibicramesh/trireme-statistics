@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 //var js []JSONData
@@ -17,12 +18,14 @@ type GraphData struct {
 type Nodes struct {
 	ID    string `json:"id"`
 	Group int    `json:"group"`
+	Name  string `json:"name"`
 }
 
 type Links struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
+	Source int    `json:"source"`
+	Target int    `json:"target"`
 	Value  int    `json:"value"`
+	Action string `json:"action"`
 }
 
 type InfluxData struct {
@@ -93,6 +96,8 @@ func DeleteContainerEvents(id []string) []Nodes {
 	json.Unmarshal(body, &res)
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 		node.ID = res.Results[0].Series[0].Values[j][1].(string)
+		name := GetName(res.Results[0].Series[0].Values[j][6].(string))
+		node.Name = name
 		nodea = append(nodea, node)
 	}
 	return nodea
@@ -110,6 +115,8 @@ func Transform(res InfluxData) GraphData {
 				if res.Results[0].Series[0].Values[j][2].(string) != "delete" {
 					if res.Results[0].Series[0].Values[j][2].(string) == "start" {
 						node.ID = res.Results[0].Series[0].Values[j][1].(string)
+						name := GetName(res.Results[0].Series[0].Values[j][6].(string))
+						node.Name = name
 						nodea = append(nodea, node)
 					}
 				} else {
@@ -129,32 +136,59 @@ func GenerateLinks(nodea []Nodes) []Links {
 	_, res := GetFlowEvents()
 	var linka []Links
 	var link Links
+	var isSrc, isDst bool
 	var k int
 	if len(res.Results[0].Series) > 0 {
 		if res.Results[0].Series[0].Name == "FlowEvents" {
 			for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 				for i := 0; i < len(nodea); i++ {
 					if nodea[i].ID == res.Results[0].Series[0].Values[j][4] {
-						link.Source = nodea[i].ID
+						link.Target = i
+						isSrc = true
 					} else if nodea[i].ID == res.Results[0].Series[0].Values[j][12] {
-						link.Target = nodea[i].ID
+						link.Source = i
+						isDst = true
 					}
-					if link.Source != "" && link.Target != "" {
-						link.Value = k + 1
-						linka = append(linka, link)
-						k++
+				}
+				if isSrc && isDst {
+					link.Value = k + 1
+					link.Action = res.Results[0].Series[0].Values[j][1].(string)
+					if link.Action == "reject" {
+						link.Action = CheckIfAccept(res.Results[0].Series[0].Values[j][12].(string))
 					}
+					linka = append(linka, link)
+					isSrc = false
+					isDst = false
+					k++
 				}
 			}
 		}
 	}
 	if len(linka) == 0 {
-		link.Source = nodea[0].ID
-		link.Target = nodea[0].ID
+		link.Source = 0
+		link.Target = 0
 		link.Value = 2
 		linka = append(linka, link)
 
 	}
 
 	return linka
+}
+
+func GetName(tag string) string {
+	eachTag := strings.Split(tag, " ")
+	name := strings.SplitAfter(eachTag[0], "=")
+	return name[1]
+}
+
+func CheckIfAccept(id string) string {
+	_, res := GetFlowEvents()
+	for i := 0; i < len(res.Results[0].Series[0].Values); i++ {
+		if id == res.Results[0].Series[0].Values[i][12].(string) {
+			if res.Results[0].Series[0].Values[i][12].(string) == "accept" {
+				return "nowaccepted"
+			}
+		}
+	}
+	return "reject"
 }
