@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: aporeto-influxdb
+  name: aporeto-influxdb
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: aporeto-influxdb
+    spec:
+      containers:
+        image: influxdb:latest
+        imagePullPolicy: Always
+        name: aporeto-influxdb
+        resources: {}
+status:
+  replicas: 0
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: influx
+  namespace: kube-system
+spec:
+  selector:
+    role: influx
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+    - protocol: TCP
+      port: 8086
+      targetPort: 8086
+    - protocol: UDP
+      port: 25826
+      targetPort: 25826

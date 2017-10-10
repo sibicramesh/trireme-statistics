@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: aporeto-grafana
+  name: aporeto-grafana
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: aporeto-grafana
+    spec:
+      containers:
+        image: grafana/grafana:latest
+        imagePullPolicy: Always
+        name: aporeto-grafana
+        resources: {}
+status:
+  replicas: 0
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: grafana
+  namespace: kube-system
+spec:
+  selector:
+    role: backend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
