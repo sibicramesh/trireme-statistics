@@ -21,8 +21,7 @@ func explode() {
 	var destination collector.EndPoint
 	samplesize := 5
 	counter := 0
-	httpCli := influxdb.CreateAndStartDB()
-
+	httpCli := influxdb.CreateAndConnectDB("aporeto", "aporeto", "http://influxdb:8086")
 	for i := 0; i < samplesize; i++ {
 
 		flowModel.FlowRecord.ContextID = "1ascasd7t"
@@ -54,8 +53,11 @@ func explode() {
 		flowModel.FlowRecord.PolicyID = "sampleID"
 
 		httpCli.CollectFlowEvent(&flowModel.FlowRecord)
+		var policy policy.TagStore
+		policy.Tags = []string{"@sys=name @app=web"}
 		contModel.ContainerRecord.ContextID = "1ascasd7t"
 		contModel.ContainerRecord.Event = "start"
+		contModel.ContainerRecord.Tags = &policy
 		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 

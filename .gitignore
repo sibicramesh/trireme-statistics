@@ -1,4 +1,5 @@
 collector/collector
+collector/docker/collector
 collector/dataexploder/dataexploder
 glide.lock
 vendor

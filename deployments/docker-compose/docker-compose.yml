@@ -10,7 +10,7 @@ services:
   #   volumes:
   #       - /var/lib/dataexploder
   collector:
-    build: ../../collector
+    build: ../../collector/docker
     ports:
         - "8080:8080"
     depends_on:

@@ -7,24 +7,30 @@ import (
 	"github.com/aporeto-inc/grafanaclient"
 )
 
-const (
-	url      = "http://grafana:3000"
-	username = "admin"
-	password = "admin"
-)
-
-func NewUI() (Grafanaui, error) {
-	session, err := CreateSession()
+// NewUI is used to create a new session and return grafana handle
+func NewUI(user string, pass string, addr string) (Grafanaui, error) {
+	if user == "" && pass == "" || addr == "" {
+		session, err := createSession(username, password, url)
+		if err != nil {
+			return nil, err
+		}
+		return &Grafanauis{
+			session: session,
+		}, nil
+	}
+	session, err := createSession(user, pass, addr)
 	if err != nil {
 		return nil, err
 	}
 	return &Grafanauis{
 		session: session,
 	}, nil
+
 }
 
-func CreateSession() (*grafanaclient.Session, error) {
-	session := grafanaclient.NewSession(username, password, url)
+func createSession(user string, pass string, addr string) (*grafanaclient.Session, error) {
+
+	session := grafanaclient.NewSession(user, pass, addr)
 	err := session.DoLogon()
 	if err != nil {
 		return nil, err
@@ -32,43 +38,61 @@ func CreateSession() (*grafanaclient.Session, error) {
 	return session, nil
 }
 
-func LaunchGrafanaCharts() (Grafanaui, error) {
-	session, err := NewUI()
-	if err != nil {
-		return nil, err
-	}
-	ds, _ := session.GetDatasource("Dependency")
-	if ds.Name != "Dependency" {
-		err = session.CreateDataSource("Dependency")
-		if err != nil {
-			return nil, err
-		}
-	}
-	session.CreateDashboard("")
+// func LaunchGrafanaCharts() (Grafanaui, error) {
+// 	session, err := NewUI()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	ds, _ := session.GetDatasource("Dependency")
+// 	if ds.Name != "Dependency" {
+// 		err = session.CreateDataSource("Dependency")
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	session.CreateDashboard("")
+//
+// 	return session, nil
+// }
 
-	return session, nil
-}
-
-func (g *Grafanauis) CreateDataSource(name string) error {
+// CreateDataSource is used to create a new datasource based on users arguements
+func (g *Grafanauis) CreateDataSource(name string, dbname string, dbuname string, dbpass string, dburl string, access string) error {
 	dsn, _ := g.GetDatasource(name)
 	if dsn.Name != name {
-		ds := grafanaclient.DataSource{Name: name,
-			Type:     "influxdb",
-			Access:   "direct",
-			URL:      "http://0.0.0.0:8086",
-			User:     "aporeto",
-			Password: "aporeto",
-			Database: "flowDB",
-		}
+		if dbname == "" {
+			ds := grafanaclient.DataSource{Name: name,
+				Type:     "influxdb",
+				Access:   access,
+				URL:      dburl,
+				User:     dbuname,
+				Password: dbpass,
+				Database: database,
+			}
 
-		err := g.session.CreateDataSource(ds)
-		if err != nil {
-			return err
+			err := g.session.CreateDataSource(ds)
+			if err != nil {
+				return err
+			}
+		} else {
+			ds := grafanaclient.DataSource{Name: name,
+				Type:     "influxdb",
+				Access:   access,
+				URL:      dburl,
+				User:     dbuname,
+				Password: dbpass,
+				Database: database,
+			}
+
+			err := g.session.CreateDataSource(ds)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
+// ListDataSources is used to list all available sources
 func (g *Grafanauis) ListDataSources() error {
 	dss, err := g.session.GetDataSourceList()
 	if err != nil {
@@ -82,6 +106,7 @@ func (g *Grafanauis) ListDataSources() error {
 	return nil
 }
 
+// GetDatasource is used to find and return a specific datasource, error otherwise
 func (g *Grafanauis) GetDatasource(name string) (*grafanaclient.DataSource, error) {
 	ds, err := g.session.GetDataSource(name)
 	if err != nil {
@@ -90,6 +115,7 @@ func (g *Grafanauis) GetDatasource(name string) (*grafanaclient.DataSource, erro
 	return &ds, nil
 }
 
+// GetDashboard is used to find and return a specific dashboard, error otherwise
 func (g *Grafanauis) GetDashboard(name string) (grafanaclient.DashboardResult, error) {
 	dr, err := g.session.GetDashboard(name)
 	if err != nil {
@@ -98,6 +124,7 @@ func (g *Grafanauis) GetDashboard(name string) (grafanaclient.DashboardResult, e
 	return dr, nil
 }
 
+// CreateDashboard is used to create a new dashboard
 func (g *Grafanauis) CreateDashboard(dbr string) {
 	dashboard := grafanaclient.Dashboard{Editable: true}
 	if dbr == "" {
@@ -108,6 +135,7 @@ func (g *Grafanauis) CreateDashboard(dbr string) {
 	g.dashboard = &dashboard
 }
 
+// AddRows is used to add a new row in the dashboard
 func (g *Grafanauis) AddRows(panel PanelType, rowname string, fields string, events string) {
 
 	graphRow := grafanaclient.NewRow()
@@ -124,12 +152,14 @@ func (g *Grafanauis) AddRows(panel PanelType, rowname string, fields string, eve
 	g.UploadToDashboard()
 }
 
+// AddPanels is a wrapper around addpanel to add a new panel to a row or create just a row
 func (g *Grafanauis) AddPanels(newpanel grafanaclient.Panel) {
 
 	g.row.AddPanel(newpanel)
 
 }
 
+// UploadToDashboard is used to push all created rows into the dashboard
 func (g *Grafanauis) UploadToDashboard() {
 
 	g.dashboard.SetTimeFrame(time.Now().Add(-5*time.Minute), time.Now().Add(10*time.Minute))
@@ -137,6 +167,7 @@ func (g *Grafanauis) UploadToDashboard() {
 	g.session.UploadDashboard(*g.dashboard, true)
 }
 
+// AddCharts is used to add different charts into rows
 func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields string) grafanaclient.Panel {
 
 	// NewPanel will create a graph panel by default
@@ -203,19 +234,11 @@ func (g *Grafanauis) AddCharts(paneltype PanelType, paneltitle string, fields st
 
 }
 
-func (g *Grafanauis) CreateRows(rowname string) {
-	graphRow := grafanaclient.NewRow()
-	graphRow.Title = rowname
-	//graphRow.Collapse = true // it will be collapsed by default
-	g.row = graphRow
-}
-
+// CreateGraphs is used to create new graphs without adding any rows
 func (g *Grafanauis) CreateGraphs(panel PanelType, rowname string, fields string, events string) {
 	newpanel := g.AddCharts(panel, events, fields)
 
 	g.AddPanels(newpanel)
-
-	//g.dashboard.AddRow(g.row)
 
 	g.UploadToDashboard()
 }

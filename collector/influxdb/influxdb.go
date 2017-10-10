@@ -16,13 +16,12 @@ const (
 	password = "aporeto"
 )
 
-func NewDB() (*Influxdbs, error) {
-
-	httpClient, err := CreateHTTPClient()
+// NewDB is used to create a new client and return influxdb handle
+func NewDB(user string, pass string, addr string) (*Influxdbs, error) {
+	httpClient, err := createHTTPClient(user, pass, addr)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Influxdbs{
 		httpClient:  httpClient,
 		reportFlows: make(chan map[string]interface{}),
@@ -32,30 +31,37 @@ func NewDB() (*Influxdbs, error) {
 	}, nil
 }
 
-func CreateHTTPClient() (client.Client, error) {
+func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
+	if user == "" && pass == "" || addr == "" {
+		httpClient, err := client.NewHTTPClient(client.HTTPConfig{
+			Addr:     "http://influxdb:8086",
+			Username: username,
+			Password: password,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+		return httpClient, nil
+	}
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     "http://0.0.0.0:8086",
-		Username: username,
-		Password: password,
+		Addr:     addr,
+		Username: user,
+		Password: pass,
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
 	return httpClient, nil
+
 }
 
-func CreateAndStartDB() *Influxdbs {
-	httlpcli, err := NewDB()
+// CreateAndConnectDB is used by the caller to connect with th ecurrent instance and start collecting
+func CreateAndConnectDB(user string, pass string, addr string) *Influxdbs {
+	httlpcli, err := NewDB(user, pass, addr)
 	if err != nil {
 		zap.L().Fatal("Failed to connect", zap.Error(err))
-	}
-
-	err = httlpcli.CreateDB()
-	if err != nil {
-		fmt.Println(err)
-		zap.L().Fatal("Failed to create DB", zap.Error(err))
 	}
 
 	httlpcli.Start()
@@ -63,16 +69,25 @@ func CreateAndStartDB() *Influxdbs {
 	return httlpcli
 }
 
-func (d *Influxdbs) CreateDB() error {
-	q := client.NewQuery("CREATE DATABASE "+database, "", "")
-	if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
+// CreateDB is used to create a new databases given name
+func (d *Influxdbs) CreateDB(dbname string) error {
+	if dbname == "" {
+		q := client.NewQuery("CREATE DATABASE "+database, "", "")
+		if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
 
-		return err
+			return err
+		}
+	} else {
+		q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
+		if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
+
+			return err
+		}
 	}
-
 	return nil
 }
 
+// AddToDB is used to add points to the data as batches
 func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{}) error {
 
 	if fields != nil {
@@ -88,6 +103,7 @@ func (d *Influxdbs) AddToDB(tags map[string]string, fields map[string]interface{
 	return nil
 }
 
+// Start is used to start listening for data
 func (d *Influxdbs) Start() error {
 
 	// d.grafana, err = grafana.LaunchGrafanaCharts()
@@ -100,6 +116,7 @@ func (d *Influxdbs) Start() error {
 	return nil
 }
 
+// Stop is used to stop and return from listen goroutine
 func (d *Influxdbs) Stop() error {
 	<-d.stop
 	d.httpClient.Close()
@@ -121,6 +138,7 @@ func (d *Influxdbs) listen() {
 	}
 }
 
+// AddData is used to add data to the batch
 func (d *Influxdbs) AddData(tags map[string]string, fields map[string]interface{}) {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  database,
@@ -148,6 +166,7 @@ func (d *Influxdbs) AddData(tags map[string]string, fields map[string]interface{
 	d.doneAdding <- true
 }
 
+// CollectFlowEvent implements trireme collector interface
 func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	//	cid, _ := d.cache.Get(record.ContextID)
 	//if record.ContextID == cid {
@@ -176,6 +195,7 @@ func (d *Influxdbs) CollectFlowEvent(record *tcollector.FlowRecord) {
 	//}
 }
 
+// CollectContainerEvent implements trireme collector interface
 func (d *Influxdbs) CollectContainerEvent(record *tcollector.ContainerRecord) {
 	if record.Event == "start" {
 		//d.cache.Add(record.ContextID, record.ContextID)

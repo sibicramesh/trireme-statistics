@@ -5,7 +5,11 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 )
 
+//Influxdbs inplements influxdb interface
 type Influxdbs struct {
+	user        string
+	pass        string
+	addr        string
 	httpClient  client.Client
 	batchPoint  client.BatchPoints
 	tags        chan (map[string]string)

@@ -8,19 +8,20 @@ import (
 	"strings"
 )
 
-//var js []JSONData
-
+// GraphData is the struct that holds the json format required for graph to generate nodes and link
 type GraphData struct {
 	Nodes []Nodes `json:"nodes"`
 	Links []Links `json:"links"`
 }
 
+// Nodes which holds pu information
 type Nodes struct {
 	ID    string `json:"id"`
 	Group int    `json:"group"`
 	Name  string `json:"name"`
 }
 
+// Links which holds the links between pu's
 type Links struct {
 	Source int    `json:"source"`
 	Target int    `json:"target"`
@@ -28,6 +29,7 @@ type Links struct {
 	Action string `json:"action"`
 }
 
+// InfluxData is th estruct that holds the data returned from influxdb api
 type InfluxData struct {
 	Results []struct {
 		StatementID int `json:"statement_id"`
@@ -39,18 +41,19 @@ type InfluxData struct {
 	} `json:"results"`
 }
 
+// GetData is called by the client which generates json with a logic that defines the nodes and links
 func GetData(w http.ResponseWriter, r *http.Request) {
 
-	body, res := GetContainerEvents()
+	body, res := getContainerEvents()
 
 	json.Unmarshal(body, &res)
 
-	jso := Transform(res)
+	jso := transform(res)
 
 	json.NewEncoder(w).Encode(jso)
 }
 
-func GetContainerEvents() ([]byte, InfluxData) {
+func getContainerEvents() ([]byte, InfluxData) {
 	var res InfluxData
 	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20ContainerEvents")
 	if err != nil {
@@ -66,7 +69,7 @@ func GetContainerEvents() ([]byte, InfluxData) {
 	return body, res
 }
 
-func GetFlowEvents() ([]byte, InfluxData) {
+func getFlowEvents() ([]byte, InfluxData) {
 	var res InfluxData
 	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20FlowEvents")
 	if err != nil {
@@ -82,7 +85,7 @@ func GetFlowEvents() ([]byte, InfluxData) {
 	return body, res
 }
 
-func DeleteContainerEvents(id []string) []Nodes {
+func deleteContainerEvents(id []string) []Nodes {
 	var node Nodes
 	var nodea []Nodes
 	for i := 0; i < len(id); i++ {
@@ -91,19 +94,19 @@ func DeleteContainerEvents(id []string) []Nodes {
 			fmt.Println(err)
 		}
 	}
-	body, res := GetContainerEvents()
+	body, res := getContainerEvents()
 
 	json.Unmarshal(body, &res)
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 		node.ID = res.Results[0].Series[0].Values[j][1].(string)
-		name := GetName(res.Results[0].Series[0].Values[j][6].(string))
+		name := getName(res.Results[0].Series[0].Values[j][6].(string))
 		node.Name = name
 		nodea = append(nodea, node)
 	}
 	return nodea
 }
 
-func Transform(res InfluxData) GraphData {
+func transform(res InfluxData) GraphData {
 	var nodea []Nodes
 	var linka []Links
 
@@ -115,25 +118,25 @@ func Transform(res InfluxData) GraphData {
 				if res.Results[0].Series[0].Values[j][2].(string) != "delete" {
 					if res.Results[0].Series[0].Values[j][2].(string) == "start" {
 						node.ID = res.Results[0].Series[0].Values[j][1].(string)
-						name := GetName(res.Results[0].Series[0].Values[j][6].(string))
+						name := getName(res.Results[0].Series[0].Values[j][6].(string))
 						node.Name = name
 						nodea = append(nodea, node)
 					}
 				} else {
 					id = append(id, res.Results[0].Series[0].Values[j][1].(string))
-					nodea = DeleteContainerEvents(id)
+					nodea = deleteContainerEvents(id)
 				}
 			}
 		}
 	}
-	linka = GenerateLinks(nodea)
+	linka = generateLinks(nodea)
 	jso := GraphData{Nodes: nodea, Links: linka}
 
 	return jso
 }
 
-func GenerateLinks(nodea []Nodes) []Links {
-	_, res := GetFlowEvents()
+func generateLinks(nodea []Nodes) []Links {
+	_, res := getFlowEvents()
 	var linka []Links
 	var link Links
 	var isSrc, isDst bool
@@ -154,7 +157,7 @@ func GenerateLinks(nodea []Nodes) []Links {
 					link.Value = k + 1
 					link.Action = res.Results[0].Series[0].Values[j][1].(string)
 					if link.Action == "reject" {
-						link.Action = CheckIfAccept(res.Results[0].Series[0].Values[j][12].(string))
+						link.Action = checkIfAccept(res.Results[0].Series[0].Values[j][12].(string))
 					}
 					linka = append(linka, link)
 					isSrc = false
@@ -175,14 +178,14 @@ func GenerateLinks(nodea []Nodes) []Links {
 	return linka
 }
 
-func GetName(tag string) string {
+func getName(tag string) string {
 	eachTag := strings.Split(tag, " ")
 	name := strings.SplitAfter(eachTag[0], "=")
 	return name[1]
 }
 
-func CheckIfAccept(id string) string {
-	_, res := GetFlowEvents()
+func checkIfAccept(id string) string {
+	_, res := getFlowEvents()
 	for i := 0; i < len(res.Results[0].Series[0].Values); i++ {
 		if id == res.Results[0].Series[0].Values[i][12].(string) {
 			if res.Results[0].Series[0].Values[i][12].(string) == "accept" {
