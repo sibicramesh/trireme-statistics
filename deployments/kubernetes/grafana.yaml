@@ -14,10 +14,10 @@ spec:
         app: aporeto-grafana
     spec:
       containers:
-        image: grafana/grafana:latest
-        imagePullPolicy: Always
-        name: aporeto-grafana
-        resources: {}
+       - image: grafana/grafana:latest
+         imagePullPolicy: Always
+         name: aporeto-grafana
+         resources: {}
 status:
   replicas: 0
 ---
@@ -28,7 +28,7 @@ metadata:
   namespace: kube-system
 spec:
   selector:
-    role: backend
+    app: aporeto-grafana
   ports:
     - protocol: TCP
       port: 3000

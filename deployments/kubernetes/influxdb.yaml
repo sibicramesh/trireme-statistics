@@ -14,7 +14,7 @@ spec:
         app: aporeto-influxdb
     spec:
       containers:
-        image: influxdb:latest
+      - image: influxdb:latest
         imagePullPolicy: Always
         name: aporeto-influxdb
         resources: {}
@@ -24,18 +24,13 @@ status:
 kind: Service
 apiVersion: v1
 metadata:
-  name: influx
+  name: influxdb
   namespace: kube-system
 spec:
   selector:
-    role: influx
+    app: aporeto-influxdb
   ports:
     - protocol: TCP
-      port: 8083
-      targetPort: 8083
-    - protocol: TCP
+      name: port2
       port: 8086
       targetPort: 8086
-    - protocol: UDP
-      port: 25826
-      targetPort: 25826
