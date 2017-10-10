@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sibicramesh/grafanaclient"
+	"github.com/aporeto-inc/grafanaclient"
 )
 
 const (

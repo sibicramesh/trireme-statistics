@@ -1,7 +1,7 @@
 package grafana
 
 import (
-	"github.com/sibicramesh/grafanaclient"
+	"github.com/aporeto-inc/grafanaclient"
 )
 
 type Grafanaui interface {
