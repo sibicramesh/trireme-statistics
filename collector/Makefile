@@ -14,6 +14,9 @@ install: build
 package: build
 	mv collector docker/collector
 
+bindata:
+	cd graph; go-bindata -pkg=graph html/...
+
 clean:
 	rm -rf vendor
 	rm -rf docker/collector

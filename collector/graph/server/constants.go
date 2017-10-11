@@ -1,3 +1,6 @@
+package server
+
+const js = `
 
 
 <!DOCTYPE html>
@@ -63,7 +66,7 @@ var force = d3.layout.force()
     .charge(-100)
     .size([width, height]);
 
-d3.json("http://0.0.0.0:8080/get", function(error, json) {
+d3.json({{.Address}}, function(error, json) {
   if (error) throw error;
 
   force
@@ -140,3 +143,4 @@ function mouseout() {
 });
 
 </script>
+`

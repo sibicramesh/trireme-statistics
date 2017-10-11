@@ -3,11 +3,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	"github.com/aporeto-inc/trireme-statistics/collector/graph"
 )
 
 // GraphData is the struct that holds the json format required for graph to generate nodes and link
@@ -55,12 +54,33 @@ func GetData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jso)
 }
 
+// func GetGraph(w http.ResponseWriter, r *http.Request) {
+// 	a, err := graph.Asset("html/index.html")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	w.Write(a)
+// }
+
+// GetGraph is used to parse html with custom address to request for json
 func GetGraph(w http.ResponseWriter, r *http.Request) {
-	a, err := graph.Asset("html/index.html")
+
+	t, err := template.New("graph").Parse(js)
 	if err != nil {
 		fmt.Println(err)
 	}
-	w.Write(a)
+	data := struct {
+		Address string
+	}{
+		Address: r.URL.Query().Get("address"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "text/html")
 }
 
 func getContainerEvents() ([]byte, InfluxData) {
