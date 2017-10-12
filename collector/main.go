@@ -57,7 +57,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/get", server.GetData)
-	mux.Handle("/graph/", http.StripPrefix("/graph/", http.HandlerFunc(server.GetGraph)))
+	mux.HandleFunc("/graph", server.GetGraph)
+	//mux.Handle("/graph/", http.StripPrefix("/graph/", http.HandlerFunc(server.GetGraph)))
 
 	handler := cors.Default().Handler(mux)
 	log.Fatal(http.ListenAndServe(cfg.ListenAddress, handler))
