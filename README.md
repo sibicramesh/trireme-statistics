@@ -14,7 +14,7 @@ trireme-statistics is an aporeto statistics and metrics collector service
 
 It is easy to start the service and it can be launched using both docker-compose and kubernetes
 
-First, If you are in root directory go into collector
+First, From root directory go into collector
   
     $ cd collector
 
