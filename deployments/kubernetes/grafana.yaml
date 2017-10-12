@@ -33,3 +33,17 @@ spec:
     - protocol: TCP
       port: 3000
       targetPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: grafana-public
+  namespace: kube-system
+spec:
+  selector:
+    app: aporeto-grafana
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: LoadBalancer
