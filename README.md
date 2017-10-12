@@ -1,6 +1,5 @@
 
 # trireme-statistics
-Statistics collector for trireme
 
 trireme-statistics is an aporeto statistics and metrics collector service
 
@@ -57,7 +56,7 @@ All containers will be launched as pods in kube cluster
 
 Now,
 
- - goto http://<externalip/grafana>:3000 for grafana dashboards
+ - goto http://<externalIP/grafana>:3000 for grafana dashboards
 
- - goto http://<externalip/collector>:8080/graph?address=/get for graph visualization
+ - goto http://<externalIP/collector>:8080/graph?address=/get for graph visualization
  
