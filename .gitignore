@@ -1,6 +1,6 @@
-collector/collector
-collector/docker/collector
-collector/graph/bindata.go
-collector/dataexploder/dataexploder
+collector
+docker/collector
+graph/bindata.go
+dataexploder/dataexploder
 glide.lock
 vendor

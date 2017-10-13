@@ -75,18 +75,14 @@ func createHTTPClient(user string, pass string, addr string) (client.Client, err
 func (d *Influxdb) CreateDB(dbname string) error {
 	zap.L().Info("Creating database", zap.String("db", dbname))
 	if dbname == "" {
-		q := client.NewQuery("CREATE DATABASE "+database, "", "")
-		if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
-
-			return err
-		}
-	} else {
-		q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
-		if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
-
-			return err
-		}
+		dbname = database
 	}
+
+	q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
+	if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -135,6 +131,7 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 	if err := d.httpClient.Write(bp); err != nil {
 		return fmt.Errorf("Couldn't add data: %s", err)
 	}
+
 	return nil
 }
 

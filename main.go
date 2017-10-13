@@ -10,10 +10,10 @@ import (
 
 	"github.com/rs/cors"
 
-	"github.com/aporeto-inc/trireme-statistics/collector/configuration"
-	"github.com/aporeto-inc/trireme-statistics/collector/grafana"
-	"github.com/aporeto-inc/trireme-statistics/collector/graph/server"
-	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
+	"github.com/aporeto-inc/trireme-statistics/configuration"
+	"github.com/aporeto-inc/trireme-statistics/grafana"
+	"github.com/aporeto-inc/trireme-statistics/graph/server"
+	"github.com/aporeto-inc/trireme-statistics/influxdb"
 )
 
 func banner() {
@@ -37,7 +37,7 @@ func main() {
 		zap.L().Fatal("Failed to create DB", zap.Error(err))
 	}
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 5)
 	graphanasession, err := grafana.NewUI(cfg.UIUserName, cfg.UIPassword, cfg.UIAddress)
 	if err != nil {
 		zap.L().Fatal("Failed to connect to ui", zap.Error(err))
@@ -58,9 +58,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/get", server.GetData)
 	mux.HandleFunc("/graph", server.GetGraph)
-	//mux.Handle("/graph/", http.StripPrefix("/graph/", http.HandlerFunc(server.GetGraph)))
 
 	handler := cors.Default().Handler(mux)
 	log.Fatal(http.ListenAndServe(cfg.ListenAddress, handler))
-
 }

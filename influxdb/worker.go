@@ -41,7 +41,7 @@ func (w *worker) addEvent(wevent *workerEvent) {
 	case w.events <- wevent: // Put event in channel unless it is full
 		zap.L().Debug("Adding event to InfluxDBProcessingQueue.")
 	default:
-		zap.L().Debug("Event queue full for InfluxDB. Dropping event.")
+		zap.L().Warn("Event queue full for InfluxDB. Dropping event.")
 	}
 }
 
