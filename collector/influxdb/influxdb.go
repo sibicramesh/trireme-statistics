@@ -19,26 +19,32 @@ const (
 type Influxdb struct {
 	httpClient client.Client
 
-	worker     *worker
 	stopWorker chan struct{}
+	worker     *worker
 }
 
 //DataAdder interface has all the methods required to interact with influxdb api
 type DataAdder interface {
-	CreateDB() error
+	CreateDB(string) error
 	AddData(tags map[string]string, fields map[string]interface{}) error
 }
 
-// NewNewDBConnectionDB is used to create a new client and return influxdb handle
-func NewNewDBConnectionDB(user string, pass string, addr string) (*Influxdb, error) {
+// NewDBConnectionDB is used to create a new client and return influxdb handle
+func NewDBConnectionDB(user string, pass string, addr string) (*Influxdb, error) {
 	httpClient, err := createHTTPClient(user, pass, addr)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
 	}
 
-	return &Influxdb{
+	dbConnection := &Influxdb{
 		httpClient: httpClient,
-	}, nil
+		stopWorker: make(chan struct{}),
+	}
+
+	worker := newWorker(dbConnection.stopWorker, dbConnection)
+	dbConnection.worker = worker
+
+	return dbConnection, nil
 }
 
 func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
