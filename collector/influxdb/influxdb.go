@@ -121,6 +121,7 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 	if err := d.httpClient.Write(bp); err != nil {
 		return fmt.Errorf("Couldn't add data: %s", err)
 	}
+	return nil
 }
 
 // CollectFlowEvent implements trireme collector interface
