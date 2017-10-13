@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
 	tcollector "github.com/aporeto-inc/trireme/collector"
 	"github.com/influxdata/influxdb/client/v2"
 )
@@ -31,6 +33,7 @@ type DataAdder interface {
 
 // NewDBConnection is used to create a new client and return influxdb handle
 func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
+	zap.L().Debug("Initializing InfluxDBConnection")
 	httpClient, err := createHTTPClient(user, pass, addr)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
@@ -70,6 +73,7 @@ func createHTTPClient(user string, pass string, addr string) (client.Client, err
 
 // CreateDB is used to create a new databases given name
 func (d *Influxdb) CreateDB(dbname string) error {
+	zap.L().Info("Creating database", zap.String("db", dbname))
 	if dbname == "" {
 		q := client.NewQuery("CREATE DATABASE "+database, "", "")
 		if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {

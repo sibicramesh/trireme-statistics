@@ -1,6 +1,9 @@
 package influxdb
 
-import collector "github.com/aporeto-inc/trireme/collector"
+import (
+	collector "github.com/aporeto-inc/trireme/collector"
+	"go.uber.org/zap"
+)
 
 // A worker manages the workload for the InfluxDB collector
 type worker struct {
@@ -32,12 +35,18 @@ func newWorker(stop chan struct{}, db DataAdder) *worker {
 }
 
 func (w *worker) addEvent(wevent *workerEvent) {
-	w.events <- wevent
+	select {
+	case w.events <- wevent: // Put event in channel unless it is full
+		zap.L().Debug("Adding event to InfluxDBProcessingQueue.")
+	default:
+		zap.L().Debug("Event queue full for InfluxDB. Dropping event.")
+	}
 }
 
 // startWorker start processing the event for this worker.
 // Blocking... Use go.
 func (w *worker) startWorker() {
+	zap.L().Info("Starting InfluxDBworker")
 	for {
 		select {
 		case event := <-w.events:
@@ -49,6 +58,8 @@ func (w *worker) startWorker() {
 }
 
 func (w *worker) processEvent(wevent *workerEvent) {
+	zap.L().Debug("Processing event for InfluxDB")
+
 	switch wevent.event {
 	case containerEvent:
 		w.doCollectContainerEvent(wevent.containerRecord)
