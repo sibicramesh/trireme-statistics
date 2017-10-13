@@ -27,7 +27,7 @@ func main() {
 
 	cfg := configuration.NewConfiguration()
 
-	httlpcli, err := influxdb.NewDB(cfg.DBUserName, cfg.DBPassword, cfg.DBAddress)
+	httlpcli, err := influxdb.NewDBConnection(cfg.DBUserName, cfg.DBPassword, cfg.DBAddress)
 	if err != nil {
 		zap.L().Fatal("Failed to connect to db", zap.Error(err))
 	}
