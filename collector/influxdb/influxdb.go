@@ -92,6 +92,8 @@ func (d *Influxdb) CreateDB(dbname string) error {
 
 // Start is used to start listening for data
 func (d *Influxdb) Start() error {
+	zap.L().Info("Starting InfluxDB worker")
+
 	go d.worker.startWorker()
 
 	return nil
@@ -99,6 +101,8 @@ func (d *Influxdb) Start() error {
 
 // Stop is used to stop and return from listen goroutine
 func (d *Influxdb) Stop() error {
+	zap.L().Info("Stopping InfluxDB worker")
+
 	d.stopWorker <- struct{}{}
 	d.httpClient.Close()
 
@@ -112,19 +116,19 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 		Precision: "us",
 	})
 	if err != nil {
-		return fmt.Errorf("Couldn't add data: %s", err)
+		return fmt.Errorf("Couldn't add data, error creating batchpoint: %s", err)
 	}
 
 	if tags["EventName"] == "ContainerStartEvents" || tags["EventName"] == "ContainerStopEvents" {
 		pt, err := client.NewPoint("ContainerEvents", tags, fields, time.Now())
 		if err != nil {
-			fmt.Println(err)
+			return fmt.Errorf("Couldn't add ContainerEvent: %s", err)
 		}
 		bp.AddPoint(pt)
 	} else if tags["EventName"] == "FlowEvents" {
 		pt, err := client.NewPoint("FlowEvents", tags, fields, time.Now())
 		if err != nil {
-			fmt.Println(err)
+			return fmt.Errorf("Couldn't add FlowEvent: %s", err)
 		}
 		bp.AddPoint(pt)
 	}

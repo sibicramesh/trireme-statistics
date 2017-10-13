@@ -1,6 +1,8 @@
 package influxdb
 
 import (
+	"fmt"
+
 	collector "github.com/aporeto-inc/trireme/collector"
 	"go.uber.org/zap"
 )
@@ -62,44 +64,45 @@ func (w *worker) processEvent(wevent *workerEvent) {
 
 	switch wevent.event {
 	case containerEvent:
-		w.doCollectContainerEvent(wevent.containerRecord)
+		if err := w.doCollectContainerEvent(wevent.containerRecord); err != nil {
+			zap.L().Error("Couldn't process influxDB Request ContainerRequest", zap.Error(err))
+		}
 
 	case flowEvent:
-		w.doCollectFlowEvent(wevent.flowRecord)
-
+		if err := w.doCollectFlowEvent(wevent.flowRecord); err != nil {
+			zap.L().Error("Couldn't process influxDB Request FlowRequest", zap.Error(err))
+		}
 	}
 }
 
 // CollectContainerEvent implements trireme collector interface
-func (w *worker) doCollectContainerEvent(record *collector.ContainerRecord) {
-	if record.Event == "start" {
-		w.db.AddData(map[string]string{
-			"EventName": "ContainerStartEvents",
-			"EventID":   record.ContextID,
-		}, map[string]interface{}{
-			"ContextID": record.ContextID,
-			"IPAddress": record.IPAddress,
-			"Tags":      record.Tags,
-			"Event":     record.Event,
-		})
+func (w *worker) doCollectContainerEvent(record *collector.ContainerRecord) error {
+	var eventName string
+
+	switch record.Event {
+	case "start":
+		eventName = "ContainerStartEvents"
+
+	case "delete":
+		eventName = "ContainerStopEvents"
+	default:
+		return fmt.Errorf("Unrecognized container event name %s ", record.Event)
 	}
 
-	if record.Event == "delete" {
-		w.db.AddData(map[string]string{
-			"EventName": "ContainerStopEvents",
-			"EventID":   record.ContextID,
-		}, map[string]interface{}{
-			"ContextID": record.ContextID,
-			"IPAddress": record.IPAddress,
-			"Tags":      record.Tags,
-			"Event":     record.Event,
-		})
-	}
+	return w.db.AddData(map[string]string{
+		"EventName": eventName,
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
+		"ContextID": record.ContextID,
+		"IPAddress": record.IPAddress,
+		"Tags":      record.Tags,
+		"Event":     record.Event,
+	})
 }
 
 // CollectFlowEvent implements trireme collector interface
-func (w *worker) doCollectFlowEvent(record *collector.FlowRecord) {
-	w.db.AddData(map[string]string{
+func (w *worker) doCollectFlowEvent(record *collector.FlowRecord) error {
+	return w.db.AddData(map[string]string{
 		"EventName": "FlowEvents",
 		"EventID":   record.ContextID,
 	}, map[string]interface{}{
