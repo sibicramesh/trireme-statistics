@@ -29,8 +29,8 @@ type DataAdder interface {
 	AddData(tags map[string]string, fields map[string]interface{}) error
 }
 
-// NewDBConnectionDB is used to create a new client and return influxdb handle
-func NewDBConnectionDB(user string, pass string, addr string) (*Influxdb, error) {
+// NewDBConnection is used to create a new client and return influxdb handle
+func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 	httpClient, err := createHTTPClient(user, pass, addr)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
