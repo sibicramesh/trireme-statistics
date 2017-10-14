@@ -56,13 +56,6 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 
 func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
 
-	// TODO: Remove this.
-	if user == "" && pass == "" || addr == "" {
-		addr = "http://influxdb:8086"
-		user = username
-		pass = password
-	}
-
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     addr,
 		Username: user,
