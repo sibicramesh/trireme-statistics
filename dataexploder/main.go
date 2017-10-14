@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aporeto-inc/trireme-statistics/collector/influxdb"
-	"github.com/aporeto-inc/trireme-statistics/collector/models"
+	"github.com/aporeto-inc/trireme-statistics/influxdb"
+	"github.com/aporeto-inc/trireme-statistics/models"
 	"github.com/aporeto-inc/trireme/collector"
 	"github.com/aporeto-inc/trireme/policy"
 )
@@ -21,7 +21,8 @@ func explode() {
 	var destination collector.EndPoint
 	samplesize := 5
 	counter := 0
-	httpCli := influxdb.CreateAndConnectDB("aporeto", "aporeto", "http://influxdb:8086")
+	httpCli, _ := influxdb.NewDBConnection("aporeto", "aporeto", "http://influxdb:8086")
+	httpCli.Start()
 	for i := 0; i < samplesize; i++ {
 
 		flowModel.FlowRecord.ContextID = "1ascasd7t"

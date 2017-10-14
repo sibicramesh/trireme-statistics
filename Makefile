@@ -18,6 +18,8 @@ codegen:
 
 build: codegen
 	env GOOS=linux GOARCH=386 go build
+	mv trireme-statistics collector
+	rm -f trireme-statistics
 
 package: build
 	mv collector docker/collector
