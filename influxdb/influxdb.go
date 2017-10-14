@@ -36,6 +36,10 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 	zap.L().Debug("Initializing InfluxDBConnection")
 	httpClient, err := createHTTPClient(user, pass, addr)
 	if err != nil {
+		return nil, fmt.Errorf("Error parsing url %s", err)
+	}
+	_, _, err = httpClient.Ping(time.Second * 0)
+	if err != nil {
 		return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
 	}
 
