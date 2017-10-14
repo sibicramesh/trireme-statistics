@@ -14,7 +14,7 @@ spec:
         app: aporeto-collector
     spec:
       containers:
-        - image: aporeto/trireme-collector:latest
+        - image: sibiataporeto/trireme-collector:latest
           imagePullPolicy: Always
           name: aporeto-collector
           resources: {}
