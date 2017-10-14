@@ -5,5 +5,6 @@ RUN mkdir -p /opt/trireme
 
 ADD collector /opt/trireme/collector
 
-WORKDIR /opt/trireme
+WORKDIR /opt/trireme/collector
+
 CMD ["./collector"]

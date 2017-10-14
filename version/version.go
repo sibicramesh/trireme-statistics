@@ -1,7 +1,7 @@
 package version
 
-// VERSION is the version of Trireme-statistics
+// VERSION is the version of trireme-statistics
 const VERSION = "0.11"
 
-// REVISION is the revision of Trireme-statistics
-const REVISION = "292de1c60e8934e07c6489eed1792bea4b273ad1"
+// REVISION is the revision of trireme-statistics
+const REVISION = "51af027a71328d6fda559aacc2ba37382cb7afb0"

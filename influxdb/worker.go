@@ -80,7 +80,7 @@ func (w *worker) doCollectContainerEvent(record *collector.ContainerRecord) erro
 	var eventName string
 
 	switch record.Event {
-	case "start":
+	case "start", "update", "create":
 		eventName = "ContainerStartEvents"
 
 	case "delete":
