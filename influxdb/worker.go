@@ -2,6 +2,7 @@ package influxdb
 
 import (
 	"fmt"
+	"time"
 
 	collector "github.com/aporeto-inc/trireme/collector"
 	"go.uber.org/zap"
@@ -37,11 +38,12 @@ func newWorker(stop chan struct{}, db DataAdder) *worker {
 }
 
 func (w *worker) addEvent(wevent *workerEvent) {
+	time.Sleep(time.Second * 500)
 	select {
 	case w.events <- wevent: // Put event in channel unless it is full
 		zap.L().Debug("Adding event to InfluxDBProcessingQueue.")
-	default:
-		zap.L().Warn("Event queue full for InfluxDB. Dropping event.")
+		// default:
+		// 	zap.L().Warn("Event queue full for InfluxDB. Dropping event.")
 	}
 }
 
