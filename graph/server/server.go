@@ -44,23 +44,15 @@ type InfluxData struct {
 
 // GetData is called by the client which generates json with a logic that defines the nodes and links
 func GetData(w http.ResponseWriter, r *http.Request) {
-
-	body, res := getContainerEvents()
-
+	var res InfluxData
+	body, err := getContainerEvents()
+	if err != nil {
+		//TODO
+	}
 	json.Unmarshal(body, &res)
-
 	jso := transform(res)
-
 	json.NewEncoder(w).Encode(jso)
 }
-
-// func GetGraph(w http.ResponseWriter, r *http.Request) {
-// 	a, err := graph.Asset("html/index.html")
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	w.Write(a)
-// }
 
 // GetGraph is used to parse html with custom address to request for json
 func GetGraph(w http.ResponseWriter, r *http.Request) {
@@ -83,48 +75,44 @@ func GetGraph(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 }
 
-func getContainerEvents() ([]byte, InfluxData) {
-	var res InfluxData
-	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20ContainerEvents")
-	if err != nil {
-		fmt.Print(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return body, res
+func getContainerEvents() ([]byte, error) {
+	return getByURI("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20ContainerEvents")
 }
 
-func getFlowEvents() ([]byte, InfluxData) {
-	var res InfluxData
-	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20FlowEvents")
+func getFlowEvents() ([]byte, error) {
+	return getByURI("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20FlowEvents")
+}
+
+func getByURI(uri string) ([]byte, error) {
+	resp, err := http.Get(uri)
 	if err != nil {
-		fmt.Print(err)
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
-	json.Unmarshal(body, &res)
-	return body, res
+	return body, nil
 }
 
 func deleteContainerEvents(id []string) []Nodes {
+	//TODO: better var names
 	var node Nodes
 	var nodea []Nodes
 	for i := 0; i < len(id); i++ {
 		_, err := http.Get("http://influxdb:8086/query?db=flowDB&q=DELETE%20FROM%20%22ContainerEvents%22%20WHERE%20(%22EventID%22%20=%20%27" + id[i] + "%27)")
 		if err != nil {
+			// TODO: Handle error better
 			fmt.Println(err)
 		}
 	}
-	body, res := getContainerEvents()
+	var res InfluxData
+	body, err := getContainerEvents()
+	if err != nil {
+		//TODO handle error
+	}
 
 	json.Unmarshal(body, &res)
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
@@ -136,6 +124,7 @@ func deleteContainerEvents(id []string) []Nodes {
 	return nodea
 }
 
+// TODO: Add Multiline comment that explains exactly how is this algo. working
 func transform(res InfluxData) GraphData {
 	var nodea []Nodes
 	var linka []Links
@@ -160,13 +149,23 @@ func transform(res InfluxData) GraphData {
 		}
 	}
 	linka = generateLinks(nodea)
+
+	// TODO: What is JSO, Why no JSON ?
 	jso := GraphData{Nodes: nodea, Links: linka}
 
 	return jso
 }
 
 func generateLinks(nodea []Nodes) []Links {
-	_, res := getFlowEvents()
+	body, err := getFlowEvents()
+	if err != nil {
+		//TODO
+	}
+	var res InfluxData
+
+	json.Unmarshal(body, &res)
+
+	// TODO: Better var names than linka link
 	var linka []Links
 	var link Links
 	var isSrc, isDst bool
@@ -214,8 +213,16 @@ func getName(tag string) string {
 	return name[1]
 }
 
+//TODO: Returning a string? Is there no better way to do this ? Define types or return booleans
 func checkIfAccept(id string) string {
-	_, res := getFlowEvents()
+	body, err := getFlowEvents()
+	if err != nil {
+		//TODO add error handling
+	}
+	var res InfluxData
+
+	json.Unmarshal(body, &res)
+
 	for i := 0; i < len(res.Results[0].Series[0].Values); i++ {
 		if id == res.Results[0].Series[0].Values[i][12].(string) {
 			if res.Results[0].Series[0].Values[i][12].(string) == "accept" {
