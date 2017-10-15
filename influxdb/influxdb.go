@@ -38,10 +38,10 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing url %s", err)
 	}
-	_, _, err = httpClient.Ping(time.Second * 0)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
-	}
+	// _, _, err = httpClient.Ping(time.Second * 0)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("Unable to create InfluxDB http client %s", err)
+	// }
 
 	dbConnection := &Influxdb{
 		httpClient: httpClient,

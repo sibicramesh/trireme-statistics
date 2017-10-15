@@ -17,9 +17,10 @@ type GraphData struct {
 
 // Nodes which holds pu information
 type Nodes struct {
-	ID    string `json:"id"`
-	Group int    `json:"group"`
-	Name  string `json:"name"`
+	ID        string `json:"id"`
+	Group     int    `json:"group"`
+	Name      string `json:"name"`
+	IPAddress string `json:"ipaddress"`
 }
 
 // Links which holds the links between pu's
@@ -150,6 +151,7 @@ func transform(res InfluxData) GraphData {
 					for k := 0; k < len(startEvents); k++ {
 						if res.Results[0].Series[0].Values[j][2].(string) == startEvents[k] {
 							node.ID = res.Results[0].Series[0].Values[j][1].(string)
+							node.IPAddress = res.Results[0].Series[0].Values[j][5].(string)
 							name := getName(res.Results[0].Series[0].Values[j][6].(string))
 							node.Name = name
 							nodea = append(nodea, node)
@@ -178,10 +180,12 @@ func generateLinks(nodea []Nodes) []Links {
 		if res.Results[0].Series[0].Name == "FlowEvents" {
 			for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 				for i := 0; i < len(nodea); i++ {
-					if nodea[i].ID == res.Results[0].Series[0].Values[j][4] {
+					fmt.Println("IP", nodea[i].IPAddress)
+					fmt.Println("\nIPFlow", res.Results[0].Series[0].Values[j][5])
+					if nodea[i].IPAddress == res.Results[0].Series[0].Values[j][5] {
 						link.Target = i
 						isSrc = true
-					} else if nodea[i].ID == res.Results[0].Series[0].Values[j][12] {
+					} else if nodea[i].IPAddress == res.Results[0].Series[0].Values[j][13] {
 						link.Source = i
 						isDst = true
 					}
