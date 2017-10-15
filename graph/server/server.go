@@ -139,6 +139,7 @@ func deleteContainerEvents(id []string) []Nodes {
 func transform(res InfluxData) GraphData {
 	var nodea []Nodes
 	var linka []Links
+	var startEvents = []string{"start", "update", "create"}
 
 	var node Nodes
 	var id []string
@@ -146,11 +147,13 @@ func transform(res InfluxData) GraphData {
 		if res.Results[0].Series[0].Name == "ContainerEvents" {
 			for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 				if res.Results[0].Series[0].Values[j][2].(string) != "delete" {
-					if res.Results[0].Series[0].Values[j][2].(string) == "start" {
-						node.ID = res.Results[0].Series[0].Values[j][1].(string)
-						name := getName(res.Results[0].Series[0].Values[j][6].(string))
-						node.Name = name
-						nodea = append(nodea, node)
+					for k := 0; k < len(startEvents); k++ {
+						if res.Results[0].Series[0].Values[j][2].(string) == startEvents[k] {
+							node.ID = res.Results[0].Series[0].Values[j][1].(string)
+							name := getName(res.Results[0].Series[0].Values[j][6].(string))
+							node.Name = name
+							nodea = append(nodea, node)
+						}
 					}
 				} else {
 					id = append(id, res.Results[0].Series[0].Values[j][1].(string))
