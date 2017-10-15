@@ -94,7 +94,9 @@ func (d *Influxdb) CreateDB(dbname string) error {
 func (d *Influxdb) Start() error {
 	zap.L().Info("Starting InfluxDB worker")
 
-	go d.worker.startWorker()
+	go func() {
+		d.worker.startWorker()
+	}()
 
 	return nil
 }
