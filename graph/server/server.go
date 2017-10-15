@@ -130,8 +130,10 @@ func deleteContainerEvents(id []string) []Nodes {
 	json.Unmarshal(body, &res)
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 		node.ID = res.Results[0].Series[0].Values[j][1].(string)
-		name := getName(res.Results[0].Series[0].Values[j][6].(string))
-		node.Name = name
+		if res.Results[0].Series[0].Values[j][6].(string) != "" {
+			name := getName(res.Results[0].Series[0].Values[j][6].(string))
+			node.Name = name
+		}
 		nodea = append(nodea, node)
 	}
 	return nodea
