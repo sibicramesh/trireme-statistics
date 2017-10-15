@@ -38,7 +38,7 @@ func newWorker(stop chan struct{}, db DataAdder) *worker {
 }
 
 func (w *worker) addEvent(wevent *workerEvent) {
-	time.Sleep(time.Second * 500)
+	time.Sleep(time.Second * 1)
 	select {
 	case w.events <- wevent: // Put event in channel unless it is full
 		zap.L().Debug("Adding event to InfluxDBProcessingQueue.")

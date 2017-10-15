@@ -1,6 +1,6 @@
 VERSION_FILE := ./version/version.go
 PROJECT_NAME := trireme-statistics
-BUILD_NUMBER := latest
+BUILD_NUMBER := v1
 VERSION := 0.11
 REVISION=$(shell git log -1 --pretty=format:"%H")
 DOCKER_REGISTRY?=sibiataporeto
