@@ -19,10 +19,11 @@ func explode() {
 	var contModel models.ContainerModel
 	var source collector.EndPoint
 	var destination collector.EndPoint
-	samplesize := 5
+	samplesize := 1000
 	counter := 0
 	httpCli, _ := influxdb.NewDBConnection("aporeto", "aporeto", "http://influxdb:8086")
 	httpCli.Start()
+	time.Sleep(time.Second * 1)
 	for i := 0; i < samplesize; i++ {
 
 		flowModel.FlowRecord.ContextID = "1ascasd7t"
@@ -62,7 +63,6 @@ func explode() {
 		httpCli.CollectContainerEvent(&contModel.ContainerRecord)
 		counter++
 
-		time.Sleep(time.Second * 5)
 	}
 	wg.Wait()
 	httpCli.Stop()
@@ -70,7 +70,7 @@ func explode() {
 
 func main() {
 	wg.Add(1)
-	time.Sleep(time.Second * 15)
+	time.Sleep(time.Second * 10)
 	go explode()
 	wg.Wait()
 	fmt.Println("Done main")

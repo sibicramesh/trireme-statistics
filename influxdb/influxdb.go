@@ -92,6 +92,7 @@ func (d *Influxdb) CreateDB(dbname string) error {
 
 // Start is used to start listening for data
 func (d *Influxdb) Start() error {
+	fmt.Println("Worker Started")
 	zap.L().Info("Starting InfluxDB worker")
 
 	go func() {

@@ -4,4 +4,4 @@ package version
 const VERSION = "0.11"
 
 // REVISION is the revision of trireme-statistics
-const REVISION = "204d9f97144d37d53e3c950ba46eeaad2e075488"
+const REVISION = "11b2003734b47bd6159988a278a584cd17ece272"

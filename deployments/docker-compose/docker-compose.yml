@@ -2,7 +2,7 @@ version: '2'
 
 services:
   # dataexploder:
-  #   build: ../../collector/dataexploder
+  #   build: ../../dataexploder
   #   depends_on:
   #       - "influxdb"
   #       - "grafana"
