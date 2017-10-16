@@ -131,7 +131,10 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 			return fmt.Errorf("Couldn't add FlowEvent: %s", err)
 		}
 		bp.AddPoint(pt)
+	} else {
+		return fmt.Errorf("Unrecognized Influx Data type: %s", tags["EventName"])
 	}
+
 	if err := d.httpClient.Write(bp); err != nil {
 		return fmt.Errorf("Couldn't add data: %s", err)
 	}
