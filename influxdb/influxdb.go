@@ -143,20 +143,47 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 
 // CollectFlowEvent implements trireme collector interface
 func (d *Influxdb) CollectFlowEvent(record *tcollector.FlowRecord) {
-	d.worker.addEvent(
-		&workerEvent{
-			event:      flowEvent,
-			flowRecord: record,
-		},
-	)
+	d.AddData(map[string]string{
+		"EventName": "FlowEvents",
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
+		"ContextID":       record.ContextID,
+		"Counter":         record.Count,
+		"SourceID":        record.Source.ID,
+		"SourceIP":        record.Source.IP,
+		"SourcePort":      record.Source.Port,
+		"SourceType":      record.Source.Type,
+		"DestinationID":   record.Destination.ID,
+		"DestinationIP":   record.Destination.IP,
+		"DestinationPort": record.Destination.Port,
+		"DestinationType": record.Destination.Type,
+		"Action":          record.Action,
+		"DropReason":      record.DropReason,
+		"PolicyID":        record.PolicyID,
+	})
 }
 
 // CollectContainerEvent implements trireme collector interface
 func (d *Influxdb) CollectContainerEvent(record *tcollector.ContainerRecord) {
-	d.worker.addEvent(
-		&workerEvent{
-			event:           containerEvent,
-			containerRecord: record,
-		},
-	)
+	var eventName string
+
+	switch record.Event {
+	case "start", "update", "create":
+		eventName = "ContainerStartEvents"
+
+	case "delete":
+		eventName = "ContainerStopEvents"
+	default:
+		zap.L().Error("Unrecognized container event name ")
+
+	}
+	d.AddData(map[string]string{
+		"EventName": eventName,
+		"EventID":   record.ContextID,
+	}, map[string]interface{}{
+		"ContextID": record.ContextID,
+		"IPAddress": record.IPAddress,
+		"Tags":      record.Tags,
+		"Event":     record.Event,
+	})
 }
