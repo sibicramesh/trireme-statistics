@@ -56,7 +56,7 @@ func main() {
 	graphanasession.AddRows(grafana.SingleStat, "events", "IPAddress", "ContainerEvents")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/get", server.GetData(httlpcli))
+	mux.HandleFunc("/get", server.GetData(httlpcli, cfg.DBName))
 	mux.HandleFunc("/graph", server.GetGraph)
 
 	handler := cors.Default().Handler(mux)
