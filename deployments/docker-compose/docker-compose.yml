@@ -1,14 +1,14 @@
 version: '2'
 
 services:
-  # dataexploder:
-  #   build: ../../dataexploder
-  #   depends_on:
-  #       - "influxdb"
-  #       - "grafana"
-  #       - "collector"
-  #   volumes:
-  #       - /var/lib/dataexploder
+  dataexploder:
+    build: ../../dataexploder
+    depends_on:
+        - "influxdb"
+        - "grafana"
+        - "collector"
+    volumes:
+        - /var/lib/dataexploder
   collector:
     build: ../../docker
     ports:

@@ -23,6 +23,7 @@ type Influxdb struct {
 
 	stopWorker chan struct{}
 	worker     *worker
+	done       chan bool
 }
 
 //DataAdder interface has all the methods required to interact with influxdb api
@@ -46,6 +47,7 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 	dbConnection := &Influxdb{
 		httpClient: httpClient,
 		stopWorker: make(chan struct{}),
+		done:       make(chan bool, 100),
 	}
 
 	worker := newWorker(dbConnection.stopWorker, dbConnection)
@@ -138,6 +140,10 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 		return fmt.Errorf("Couldn't add data: %s", err)
 	}
 
+	if <-d.done {
+		return nil
+	}
+
 	return nil
 }
 
@@ -161,6 +167,7 @@ func (d *Influxdb) CollectFlowEvent(record *tcollector.FlowRecord) {
 		"DropReason":      record.DropReason,
 		"PolicyID":        record.PolicyID,
 	})
+	d.done <- true
 }
 
 // CollectContainerEvent implements trireme collector interface
@@ -186,4 +193,5 @@ func (d *Influxdb) CollectContainerEvent(record *tcollector.ContainerRecord) {
 		"Tags":      record.Tags,
 		"Event":     record.Event,
 	})
+	d.done <- true
 }
