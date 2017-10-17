@@ -71,13 +71,9 @@ func createHTTPClient(user string, pass string, addr string) (client.Client, err
 // CreateDB is used to create a new databases given name
 func (d *Influxdb) CreateDB(dbname string) error {
 	zap.L().Info("Creating database", zap.String("db", dbname))
-	if dbname == "" {
-		dbname = database
-	}
 
-	q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
-	response, err := d.httpClient.Query(q)
-	if err != nil && response.Error() != nil {
+	_, err := d.ExecuteQuery("CREATE DATABASE "+dbname, "")
+	if err != nil {
 		return err
 	}
 
