@@ -30,7 +30,7 @@ type workerEvent struct {
 
 func newWorker(stop chan struct{}, db DataAdder) *worker {
 	return &worker{
-		events: make(chan *workerEvent, 1000),
+		events: make(chan *workerEvent, 10000),
 		stop:   stop,
 		db:     db,
 	}
