@@ -60,6 +60,7 @@ func createHTTPClient(user string, pass string, addr string) (client.Client, err
 		Addr:     addr,
 		Username: user,
 		Password: pass,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		return nil, err
