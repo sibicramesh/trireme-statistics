@@ -143,7 +143,7 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 
 // CollectFlowEvent implements trireme collector interface
 func (d *Influxdb) CollectFlowEvent(record *tcollector.FlowRecord) {
-	d.AddData(map[string]string{
+	go d.AddData(map[string]string{
 		"EventName": "FlowEvents",
 		"EventID":   record.ContextID,
 	}, map[string]interface{}{
@@ -177,7 +177,7 @@ func (d *Influxdb) CollectContainerEvent(record *tcollector.ContainerRecord) {
 		zap.L().Error("Unrecognized container event name ")
 
 	}
-	d.AddData(map[string]string{
+	go d.AddData(map[string]string{
 		"EventName": eventName,
 		"EventID":   record.ContextID,
 	}, map[string]interface{}{
