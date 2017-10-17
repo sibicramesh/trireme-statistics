@@ -2,7 +2,7 @@ version: '2'
 
 services:
   # dataexploder:
-  #   build: ../../collector/dataexploder
+  #   build: ../../dataexploder
   #   depends_on:
   #       - "influxdb"
   #       - "grafana"
@@ -10,7 +10,7 @@ services:
   #   volumes:
   #       - /var/lib/dataexploder
   collector:
-    build: ../../collector/docker
+    build: ../../docker
     ports:
         - "8080:8080"
     depends_on:
