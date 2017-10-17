@@ -30,7 +30,7 @@ type workerEvent struct {
 
 func newWorker(stop chan struct{}, db DataAdder) *worker {
 	return &worker{
-		events: make(chan *workerEvent, 100),
+		events: make(chan *workerEvent, 500),
 		stop:   stop,
 		db:     db,
 	}
@@ -80,7 +80,7 @@ func (w *worker) doCollectContainerEvent(record *collector.ContainerRecord) erro
 	var eventName string
 
 	switch record.Event {
-	case "start":
+	case "start", "update", "create":
 		eventName = "ContainerStartEvents"
 
 	case "delete":

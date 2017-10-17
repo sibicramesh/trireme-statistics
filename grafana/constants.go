@@ -11,9 +11,3 @@ const (
 	//Diagram - Type of panel used in grafana
 	Diagram PanelType = "jdbranham-diagram-panel"
 )
-const (
-	url      = "http://grafana:3000"
-	username = "admin"
-	password = "admin"
-	database = "flowDB"
-)

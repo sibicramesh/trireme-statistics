@@ -56,13 +56,6 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 
 func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
 
-	// TODO: Remove this.
-	if user == "" && pass == "" || addr == "" {
-		addr = "http://influxdb:8086"
-		user = username
-		pass = password
-	}
-
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     addr,
 		Username: user,
@@ -78,16 +71,25 @@ func createHTTPClient(user string, pass string, addr string) (client.Client, err
 // CreateDB is used to create a new databases given name
 func (d *Influxdb) CreateDB(dbname string) error {
 	zap.L().Info("Creating database", zap.String("db", dbname))
-	if dbname == "" {
-		dbname = database
-	}
 
-	q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
-	if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
+	_, err := d.ExecuteQuery("CREATE DATABASE "+dbname, "")
+	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// ExecuteQuery is used to execute a query given a database name
+func (d *Influxdb) ExecuteQuery(query string, dbname string) (*client.Response, error) {
+
+	q := client.NewQuery(query, dbname, "")
+	response, err := d.httpClient.Query(q)
+	if err != nil && response.Error() != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // Start is used to start listening for data
@@ -111,10 +113,12 @@ func (d *Influxdb) Stop() error {
 
 // AddData is used to add data to the batch
 func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}) error {
+	zap.L().Debug("Calling AddData", zap.Any("tags", tags), zap.Any("fields", fields))
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  database,
 		Precision: "us",
 	})
+	zap.L().Debug("Calling AddData 1", zap.Any("tags", tags), zap.Any("fields", fields))
 	if err != nil {
 		return fmt.Errorf("Couldn't add data, error creating batchpoint: %s", err)
 	}
@@ -132,9 +136,11 @@ func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}
 		}
 		bp.AddPoint(pt)
 	}
+	zap.L().Debug("Calling AddData 2", zap.Any("tags", tags), zap.Any("fields", fields))
 	if err := d.httpClient.Write(bp); err != nil {
 		return fmt.Errorf("Couldn't add data: %s", err)
 	}
+	zap.L().Debug("Calling AddData 3", zap.Any("tags", tags), zap.Any("fields", fields))
 
 	return nil
 }

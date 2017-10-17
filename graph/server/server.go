@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/aporeto-inc/trireme-statistics/influxdb"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 // GraphData is the struct that holds the json format required for graph to generate nodes and link
@@ -17,211 +19,231 @@ type GraphData struct {
 
 // Nodes which holds pu information
 type Nodes struct {
-	ID    string `json:"id"`
-	Group int    `json:"group"`
-	Name  string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	IPAddress string `json:"ipaddress"`
 }
 
 // Links which holds the links between pu's
 type Links struct {
 	Source int    `json:"source"`
 	Target int    `json:"target"`
-	Value  int    `json:"value"`
 	Action string `json:"action"`
 }
 
-// InfluxData is th estruct that holds the data returned from influxdb api
-type InfluxData struct {
-	Results []struct {
-		StatementID int `json:"statement_id"`
-		Series      []struct {
-			Name    string          `json:"name"`
-			Columns []string        `json:"columns"`
-			Values  [][]interface{} `json:"values"`
-		} `json:"series"`
-	} `json:"results"`
-}
-
 // GetData is called by the client which generates json with a logic that defines the nodes and links
-func GetData(w http.ResponseWriter, r *http.Request) {
+func GetData(httpClient *influxdb.Influxdb) http.HandlerFunc {
 
-	body, res := getContainerEvents()
+	return func(w http.ResponseWriter, r *http.Request) {
 
-	json.Unmarshal(body, &res)
+		res, err := getContainerEvents(httpClient)
+		if err != nil {
+			http.Error(w, err.Error(), 0)
+		}
 
-	jso := transform(res)
+		jsonData, err := transform(res, httpClient)
+		if err != nil {
+			http.Error(w, err.Error(), 2)
+		}
 
-	json.NewEncoder(w).Encode(jso)
+		err = json.NewEncoder(w).Encode(jsonData)
+		if err != nil {
+			http.Error(w, err.Error(), 3)
+		}
+	}
 }
-
-// func GetGraph(w http.ResponseWriter, r *http.Request) {
-// 	a, err := graph.Asset("html/index.html")
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	w.Write(a)
-// }
 
 // GetGraph is used to parse html with custom address to request for json
 func GetGraph(w http.ResponseWriter, r *http.Request) {
 
-	t, err := template.New("graph").Parse(js)
+	htmlData, err := template.New("graph").Parse(js)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, err.Error(), 0)
 	}
+
 	data := struct {
 		Address string
 	}{
 		Address: r.URL.Query().Get("address"),
 	}
 
-	err = t.Execute(w, data)
+	err = htmlData.Execute(w, data)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, err.Error(), 1)
 	}
 
 	w.Header().Set("Content-Type", "text/html")
 }
 
-func getContainerEvents() ([]byte, InfluxData) {
-	var res InfluxData
-	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20ContainerEvents")
+func getContainerEvents(httpClient *influxdb.Influxdb) (*client.Response, error) {
+
+	res, err := executeQuery("SELECT * FROM ContainerEvents", httpClient)
 	if err != nil {
-		fmt.Print(err)
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return body, res
+	return res, nil
 }
 
-func getFlowEvents() ([]byte, InfluxData) {
-	var res InfluxData
-	resp, err := http.Get("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20FlowEvents")
+func getFlowEvents(httpClient *influxdb.Influxdb) (*client.Response, error) {
+
+	res, err := executeQuery("SELECT * FROM FlowEvents", httpClient)
 	if err != nil {
-		fmt.Print(err)
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-	json.Unmarshal(body, &res)
-	return body, res
+	return res, nil
 }
 
-func deleteContainerEvents(id []string) []Nodes {
+func executeQuery(query string, httpClient *influxdb.Influxdb) (*client.Response, error) {
+
+	res, err := httpClient.ExecuteQuery(query, "flowDB")
+	if err != nil {
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
+	}
+
+	return res, nil
+}
+
+func deleteContainerEvents(id []string, httpClient *influxdb.Influxdb) ([]Nodes, error) {
 	var node Nodes
-	var nodea []Nodes
+	var nodes []Nodes
+
 	for i := 0; i < len(id); i++ {
-		_, err := http.Get("http://influxdb:8086/query?db=flowDB&q=DELETE%20FROM%20%22ContainerEvents%22%20WHERE%20(%22EventID%22%20=%20%27" + id[i] + "%27)")
+		_, err := executeQuery("DELETE FROM \"ContainerEvents\" WHERE \"EventID\" = '"+id[i]+"'", httpClient)
 		if err != nil {
-			fmt.Println(err)
+			return nil, fmt.Errorf("Error: Executing Query %s", err)
 		}
 	}
-	body, res := getContainerEvents()
 
-	json.Unmarshal(body, &res)
+	res, _ := getContainerEvents(httpClient)
+
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 		node.ID = res.Results[0].Series[0].Values[j][1].(string)
-		name := getName(res.Results[0].Series[0].Values[j][6].(string))
-		node.Name = name
-		nodea = append(nodea, node)
+		if res.Results[0].Series[0].Values[j][6].(string) != "" {
+			name := getName(res.Results[0].Series[0].Values[j][6].(string))
+			node.Name = name
+		}
+		nodes = append(nodes, node)
 	}
-	return nodea
+
+	return nodes, nil
 }
 
-func transform(res InfluxData) GraphData {
-	var nodea []Nodes
-	var linka []Links
-
+// transform will convert the JSON response from influxdb to nodes and links to generate graph
+// nodes struct will have nodeid, nodeipaddress and nodename
+// links struct will have source, target and action
+// the nodes are extracted from the influx data and stored in the array of structure
+// then later this array is sent to the link generator which process the links between the nodes
+// the link generator basically generates the link by comparing the nodeip with the flows src and dst ip's
+func transform(res *client.Response, httpClient *influxdb.Influxdb) (*GraphData, error) {
+	var nodes []Nodes
+	var links []Links
 	var node Nodes
+	var err error
 	var id []string
+	var startEvents = []string{"start", "update", "create"}
+
 	if len(res.Results[0].Series) > 0 {
 		if res.Results[0].Series[0].Name == "ContainerEvents" {
 			for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 				if res.Results[0].Series[0].Values[j][2].(string) != "delete" {
-					if res.Results[0].Series[0].Values[j][2].(string) == "start" {
-						node.ID = res.Results[0].Series[0].Values[j][1].(string)
-						name := getName(res.Results[0].Series[0].Values[j][6].(string))
-						node.Name = name
-						nodea = append(nodea, node)
+					for k := 0; k < len(startEvents); k++ {
+						if res.Results[0].Series[0].Values[j][2].(string) == startEvents[k] {
+							node.ID = res.Results[0].Series[0].Values[j][1].(string)
+							node.IPAddress = res.Results[0].Series[0].Values[j][5].(string)
+							if res.Results[0].Series[0].Values[j][6].(string) != "" {
+								name := getName(res.Results[0].Series[0].Values[j][6].(string))
+								node.Name = name
+							}
+							nodes = append(nodes, node)
+						}
 					}
 				} else {
 					id = append(id, res.Results[0].Series[0].Values[j][1].(string))
-					nodea = deleteContainerEvents(id)
+					nodes, err = deleteContainerEvents(id, httpClient)
+					if err != nil {
+						return nil, fmt.Errorf("Error: Reading from Resoponse %s", err)
+					}
 				}
 			}
 		}
 	}
-	linka = generateLinks(nodea)
-	jso := GraphData{Nodes: nodea, Links: linka}
 
-	return jso
+	links, err = generateLinks(nodes, httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("Error: Generating Links %s", err)
+	}
+
+	jsonData := GraphData{Nodes: nodes, Links: links}
+
+	return &jsonData, nil
 }
 
-func generateLinks(nodea []Nodes) []Links {
-	_, res := getFlowEvents()
-	var linka []Links
+func generateLinks(nodea []Nodes, httpClient *influxdb.Influxdb) ([]Links, error) {
+
+	res, err := getFlowEvents(httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("Error: Retriving Flow Events %s", err)
+	}
+
+	var links []Links
 	var link Links
 	var isSrc, isDst bool
-	var k int
+
 	if len(res.Results[0].Series) > 0 {
 		if res.Results[0].Series[0].Name == "FlowEvents" {
 			for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 				for i := 0; i < len(nodea); i++ {
-					if nodea[i].ID == res.Results[0].Series[0].Values[j][4] {
+					if nodea[i].IPAddress == res.Results[0].Series[0].Values[j][5] {
 						link.Target = i
 						isSrc = true
-					} else if nodea[i].ID == res.Results[0].Series[0].Values[j][12] {
+					} else if nodea[i].IPAddress == res.Results[0].Series[0].Values[j][13] {
 						link.Source = i
 						isDst = true
 					}
 				}
 				if isSrc && isDst {
-					link.Value = k + 1
 					link.Action = res.Results[0].Series[0].Values[j][1].(string)
-					if link.Action == "reject" {
-						link.Action = checkIfAccept(res.Results[0].Series[0].Values[j][12].(string))
-					}
-					linka = append(linka, link)
+					links = append(links, link)
 					isSrc = false
 					isDst = false
-					k++
 				}
 			}
 		}
 	}
-	if len(linka) == 0 {
+
+	if len(links) == 0 {
 		link.Source = 0
 		link.Target = 0
-		link.Value = 2
-		linka = append(linka, link)
-
+		links = append(links, link)
 	}
 
-	return linka
+	return links, nil
 }
 
 func getName(tag string) string {
-	eachTag := strings.Split(tag, " ")
-	name := strings.SplitAfter(eachTag[0], "=")
-	return name[1]
-}
+	var name string
 
-func checkIfAccept(id string) string {
-	_, res := getFlowEvents()
-	for i := 0; i < len(res.Results[0].Series[0].Values); i++ {
-		if id == res.Results[0].Series[0].Values[i][12].(string) {
-			if res.Results[0].Series[0].Values[i][12].(string) == "accept" {
-				return "nowaccepted"
+	if strings.Contains(tag, "@usr:io.kubernetes.pod.name") {
+		eachTag := strings.Split(tag, " ")
+		for i := 0; i < len(eachTag); i++ {
+			podName := strings.SplitAfter(eachTag[i], "=")
+			for j := 0; j < len(podName); j++ {
+				if podName[j] == "@usr:io.kubernetes.pod.name=" {
+					name = podName[1]
+				}
 			}
 		}
+	} else {
+		eachTag := strings.Split(tag, " ")
+		containerName := strings.SplitAfter(eachTag[0], "=")
+		if containerName != nil {
+			name = containerName[1]
+		} else {
+			name = "unknown"
+		}
 	}
-	return "reject"
+
+	return name
 }
