@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/aporeto-inc/trireme-statistics/influxdb"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 // GraphData is the struct that holds the json format required for graph to generate nodes and link
@@ -29,39 +31,25 @@ type Links struct {
 	Action string `json:"action"`
 }
 
-// InfluxData is the struct that holds the data returned from influxdb api
-type InfluxData struct {
-	Results []struct {
-		StatementID int `json:"statement_id"`
-		Series      []struct {
-			Name    string          `json:"name"`
-			Columns []string        `json:"columns"`
-			Values  [][]interface{} `json:"values"`
-		} `json:"series"`
-	} `json:"results"`
-}
-
 // GetData is called by the client which generates json with a logic that defines the nodes and links
-func GetData(w http.ResponseWriter, r *http.Request) {
+func GetData(httpClient *influxdb.Influxdb) http.HandlerFunc {
 
-	body, res, err := getContainerEvents()
-	if err != nil {
-		http.Error(w, err.Error(), 0)
-	}
+	return func(w http.ResponseWriter, r *http.Request) {
 
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		http.Error(w, err.Error(), 1)
-	}
+		res, err := getContainerEvents(httpClient)
+		if err != nil {
+			http.Error(w, err.Error(), 0)
+		}
 
-	jsonData, err := transform(res)
-	if err != nil {
-		http.Error(w, err.Error(), 2)
-	}
+		jsonData, err := transform(res, httpClient)
+		if err != nil {
+			http.Error(w, err.Error(), 2)
+		}
 
-	err = json.NewEncoder(w).Encode(jsonData)
-	if err != nil {
-		http.Error(w, err.Error(), 3)
+		err = json.NewEncoder(w).Encode(jsonData)
+		if err != nil {
+			http.Error(w, err.Error(), 3)
+		}
 	}
 }
 
@@ -87,65 +75,48 @@ func GetGraph(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 }
 
-func getContainerEvents() ([]byte, *InfluxData, error) {
+func getContainerEvents(httpClient *influxdb.Influxdb) (*client.Response, error) {
 
-	body, res, err := getByURI("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20ContainerEvents")
+	res, err := executeQuery("SELECT * FROM ContainerEvents", httpClient)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
 	}
 
-	return body, res, nil
+	return res, nil
 }
 
-func getFlowEvents() ([]byte, *InfluxData, error) {
+func getFlowEvents(httpClient *influxdb.Influxdb) (*client.Response, error) {
 
-	body, res, err := getByURI("http://influxdb:8086/query?db=flowDB&&q=SELECT%20*%20FROM%20FlowEvents")
+	res, err := executeQuery("SELECT * FROM FlowEvents", httpClient)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
 	}
 
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Error: Malformed JSON Data %s", err)
-	}
-
-	return body, res, nil
+	return res, nil
 }
 
-func getByURI(uri string) ([]byte, *InfluxData, error) {
-	var res InfluxData
+func executeQuery(query string, httpClient *influxdb.Influxdb) (*client.Response, error) {
 
-	resp, err := http.Get(uri)
+	res, err := httpClient.ExecuteQuery(query, "flowDB")
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
+		return nil, fmt.Errorf("Error: Resource Unavailabe %s", err)
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Error: Reading from Resoponse %s", err)
-	}
-
-	return body, &res, nil
+	return res, nil
 }
 
-func deleteContainerEvents(id []string) ([]Nodes, error) {
+func deleteContainerEvents(id []string, httpClient *influxdb.Influxdb) ([]Nodes, error) {
 	var node Nodes
 	var nodes []Nodes
 
 	for i := 0; i < len(id); i++ {
-		_, err := http.Get("http://influxdb:8086/query?db=flowDB&q=DELETE%20FROM%20%22ContainerEvents%22%20WHERE%20(%22EventID%22%20=%20%27" + id[i] + "%27)")
+		_, err := executeQuery("DELETE FROM ContainerEvents WHERE (EventID = "+id[i]+")", httpClient)
 		if err != nil {
-			return nil, fmt.Errorf("Error: Reading from Resoponse %s", err)
+			return nil, fmt.Errorf("Error: Executing Query %s", err)
 		}
 	}
 
-	body, res, _ := getContainerEvents()
-
-	err := json.Unmarshal(body, &res)
-	if err != nil {
-		return nil, fmt.Errorf("Error: Malformed JSON Data %s", err)
-	}
+	res, _ := getContainerEvents(httpClient)
 
 	for j := 0; j < len(res.Results[0].Series[0].Values); j++ {
 		node.ID = res.Results[0].Series[0].Values[j][1].(string)
@@ -165,7 +136,7 @@ func deleteContainerEvents(id []string) ([]Nodes, error) {
 // the nodes are extracted from the influx data and stored in the array of structure
 // then later this array is sent to the link generator which process the links between the nodes
 // the link generator basically generates the link by comparing the nodeip with the flows src and dst ip's
-func transform(res *InfluxData) (*GraphData, error) {
+func transform(res *client.Response, httpClient *influxdb.Influxdb) (*GraphData, error) {
 	var nodes []Nodes
 	var links []Links
 	var node Nodes
@@ -190,7 +161,7 @@ func transform(res *InfluxData) (*GraphData, error) {
 					}
 				} else {
 					id = append(id, res.Results[0].Series[0].Values[j][1].(string))
-					nodes, err = deleteContainerEvents(id)
+					nodes, err = deleteContainerEvents(id, httpClient)
 					if err != nil {
 						return nil, fmt.Errorf("Error: Reading from Resoponse %s", err)
 					}
@@ -199,7 +170,7 @@ func transform(res *InfluxData) (*GraphData, error) {
 		}
 	}
 
-	links, err = generateLinks(nodes)
+	links, err = generateLinks(nodes, httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("Error: Generating Links %s", err)
 	}
@@ -209,11 +180,11 @@ func transform(res *InfluxData) (*GraphData, error) {
 	return &jsonData, nil
 }
 
-func generateLinks(nodea []Nodes) ([]Links, error) {
+func generateLinks(nodea []Nodes, httpClient *influxdb.Influxdb) ([]Links, error) {
 
-	_, res, err := getFlowEvents()
+	res, err := getFlowEvents(httpClient)
 	if err != nil {
-		return nil, fmt.Errorf("Error: Flow Events not received %s", err)
+		return nil, fmt.Errorf("Error: Retriving Flow Events %s", err)
 	}
 
 	var links []Links

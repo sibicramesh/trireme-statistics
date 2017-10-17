@@ -56,13 +56,6 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 
 func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
 
-	// TODO: Remove this.
-	if user == "" && pass == "" || addr == "" {
-		addr = "http://influxdb:8086"
-		user = username
-		pass = password
-	}
-
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     addr,
 		Username: user,
@@ -83,11 +76,24 @@ func (d *Influxdb) CreateDB(dbname string) error {
 	}
 
 	q := client.NewQuery("CREATE DATABASE "+dbname, "", "")
-	if response, err := d.httpClient.Query(q); err != nil && response.Error() != nil {
+	response, err := d.httpClient.Query(q)
+	if err != nil && response.Error() != nil {
 		return err
 	}
 
 	return nil
+}
+
+// ExecuteQuery is used to execute a query given a database name
+func (d *Influxdb) ExecuteQuery(query string, dbname string) (*client.Response, error) {
+
+	q := client.NewQuery(query, dbname, "")
+	response, err := d.httpClient.Query(q)
+	if err != nil && response.Error() != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 // Start is used to start listening for data
