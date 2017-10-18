@@ -23,6 +23,7 @@ type Configuration struct {
 	DBAddress  string
 	DBPort     string
 	DBIP       string
+	DBSkipTLS  bool
 
 	UIUserName string
 	UIPassword string
@@ -30,6 +31,9 @@ type Configuration struct {
 	UIDBAccess string
 	UIPort     string
 	UIIP       string
+
+	LogFormat string
+	LogLevel  string
 }
 
 func usage() {
@@ -42,6 +46,8 @@ func LoadConfiguration() (*Configuration, error) {
 	flag.Usage = usage
 	flag.String("ListenAddress", "", "Server Address [Default: 8080]")
 	flag.String("KubeconfigPath", "", "KubeConfig used to connect to Kubernetes")
+	flag.String("LogLevel", "", "Log level. Default to info (trace//debug//info//warn//error//fatal)")
+	flag.String("LogFormat", "", "Log Format. Default to human")
 
 	flag.String("DBUserName", "", "Username of the database [default: aporeto]")
 	flag.String("DBPassword", "", "Password of the database [default: aporeto]")
@@ -49,6 +55,7 @@ func LoadConfiguration() (*Configuration, error) {
 	flag.String("DBIP", "", "IP address of the database [default: influxdb]")
 	flag.String("DBPort", "", "Port of the database [default: 8086]")
 	flag.String("DBAddress", "", "URI to connect to DB [default: http://influxdb:8086]")
+	flag.String("DBSkipTLS", "", "Is valid TLS required for the DB server ? [default: true]")
 
 	flag.String("UIUserName", "", "Username of the UI to connect with [default: admin]")
 	flag.String("UIPassword", "", "Password of the UI to connect with [default: admin]")
@@ -60,6 +67,8 @@ func LoadConfiguration() (*Configuration, error) {
 	// Setting up default configuration
 	viper.SetDefault("ListenAddress", ":8080")
 	viper.SetDefault("KubeconfigPath", "")
+	viper.SetDefault("LogLevel", "info")
+	viper.SetDefault("LogFormat", "human")
 
 	viper.SetDefault("DBUserName", "aporeto")
 	viper.SetDefault("DBPassword", "aporeto")
@@ -67,6 +76,7 @@ func LoadConfiguration() (*Configuration, error) {
 	viper.SetDefault("DBIP", "influxdb")
 	viper.SetDefault("DBPort", ":8086")
 	viper.SetDefault("DBAddress", "http://influxdb:8086")
+	viper.SetDefault("DBSkipTLS", true)
 
 	viper.SetDefault("UIUserName", "admin")
 	viper.SetDefault("UIPassword", "admin")
