@@ -10,16 +10,10 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 )
 
-// TODO: Remove default credentials
-const (
-	database = "flowDB"
-	username = "aporeto"
-	password = "aporeto"
-)
-
 //Influxdb inplements a DataAdder interface for influxDB
 type Influxdb struct {
 	httpClient client.Client
+	database   string
 
 	stopWorker chan struct{}
 	worker     *worker
@@ -32,9 +26,9 @@ type DataAdder interface {
 }
 
 // NewDBConnection is used to create a new client and return influxdb handle
-func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
+func NewDBConnection(user string, pass string, addr string, db string, InsecureSkipVerify bool) (*Influxdb, error) {
 	zap.L().Debug("Initializing InfluxDBConnection")
-	httpClient, err := createHTTPClient(user, pass, addr)
+	httpClient, err := createHTTPClient(user, pass, addr, InsecureSkipVerify)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing url %s", err)
 	}
@@ -45,22 +39,29 @@ func NewDBConnection(user string, pass string, addr string) (*Influxdb, error) {
 
 	dbConnection := &Influxdb{
 		httpClient: httpClient,
+		database:   db,
 		stopWorker: make(chan struct{}),
 	}
 
 	worker := newWorker(dbConnection.stopWorker, dbConnection)
 	dbConnection.worker = worker
 
+	// Attempt to create the Database. Silently fail if it already exists.
+	if err := dbConnection.CreateDB(db); err != nil {
+		return nil, fmt.Errorf("Error: Creating Database: %s", err)
+	}
+
 	return dbConnection, nil
 }
 
-func createHTTPClient(user string, pass string, addr string) (client.Client, error) {
+func createHTTPClient(user string, pass string, addr string, InsecureSkipVerify bool) (client.Client, error) {
 
 	httpClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     addr,
-		Username: user,
-		Password: pass,
-		Timeout:  time.Second,
+		Addr:               addr,
+		Username:           user,
+		Password:           pass,
+		Timeout:            time.Second,
+		InsecureSkipVerify: InsecureSkipVerify,
 	})
 	if err != nil {
 		return nil, err
@@ -116,7 +117,7 @@ func (d *Influxdb) Stop() error {
 func (d *Influxdb) AddData(tags map[string]string, fields map[string]interface{}) error {
 	zap.L().Debug("Calling AddData", zap.Any("tags", tags), zap.Any("fields", fields))
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  database,
+		Database:  d.database,
 		Precision: "us",
 	})
 	zap.L().Debug("Calling AddData 1", zap.Any("tags", tags), zap.Any("fields", fields))
