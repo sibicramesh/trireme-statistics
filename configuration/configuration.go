@@ -39,7 +39,7 @@ UI Options:
 		--ui-db-address=<address>   Address to connect to UI [default: http://grafana:3000]
 		--ui-db-access=<access>   Access to connect to DB [default: proxy]
 
-Log Options:	
+Log Options:
 		--log-level=<loglevel>    Log level[default: info].
 		--log-format=<logformat>    Log format[default: human].
 `
