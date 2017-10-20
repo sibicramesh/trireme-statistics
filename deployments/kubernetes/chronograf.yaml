@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: aporeto-chronograf
+  name: aporeto-chronograf
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: aporeto-chronograf
+    spec:
+      containers:
+       - image: chronograf:latest
+         command: ["chronograf","--influxdb-url=http://influxdb:8086"]
+         imagePullPolicy: Always
+         name: chronograf-grafana
+         resources: {}
+status:
+  replicas: 0
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: chronograf
+  namespace: kube-system
+spec:
+  selector:
+    app: aporeto-chronograf
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: chronograf-public
+  namespace: kube-system
+spec:
+  selector:
+    app: aporeto-chronograf
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8888
+  type: LoadBalancer
