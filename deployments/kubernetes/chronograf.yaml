@@ -17,7 +17,7 @@ spec:
        - image: chronograf:latest
          command: ["chronograf","--influxdb-url=http://influxdb:8086"]
          imagePullPolicy: Always
-         name: chronograf-grafana
+         name: aporeto-chronograf
          resources: {}
 status:
   replicas: 0
