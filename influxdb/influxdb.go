@@ -159,6 +159,7 @@ func (d *Influxdb) CollectFlowEvent(record *tcollector.FlowRecord) {
 
 // CollectContainerEvent implements trireme collector interface
 func (d *Influxdb) CollectContainerEvent(record *tcollector.ContainerRecord) {
+	fmt.Println("CONTAINER EVENTS", record.ContextID, record.Event, record.Tags)
 	d.worker.addEvent(
 		&workerEvent{
 			event:           containerEvent,
